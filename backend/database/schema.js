@@ -28,7 +28,6 @@ const Class = new Schema ({
     title    : {type: String},
     teacher  : {type: Schema.Types.ObjectId, ref: 'User'},
     pupils   : {type: [Schema.Types.ObjectId], ref: 'User'},
-    url      : {type: String},  
     homeworks: {type: [{
         created_timestamp : {type: Date, default: Date.now},
         deadline_timestamp: {type: Date},
