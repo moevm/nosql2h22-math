@@ -23,7 +23,6 @@ const User = new Schema ({
     first_name: {type: String},
     last_name : {type: String},
     role      : {type: String},
-    classes   : {type: [Schema.Types.ObjectId], ref: 'Class'},
     tasks     : {type: [Task]},
     logs      : {type: [Schema.Types.ObjectId], ref: 'Log'}
 }, {versionKey: false});
@@ -41,13 +40,11 @@ const Homework = new Schema ({
 
 const Class = new Schema ({
     title    : {type: String},
-    teacher  : {type: Schema.Types.ObjectId, ref: 'User'},
-    pupils   : {type: [Schema.Types.ObjectId], ref: 'User'},
+    members   : {type: [Schema.Types.ObjectId], ref: 'User'},
     homeworks: {type: [Schema.Types.ObjectId], ref: 'Homework'}
 }, {versionKey: false});
 
 const Log = new Schema ({
-    user_id  : {type: Schema.Types.ObjectId, ref: 'User'},
     timestamp: {type: Date, default: Date.now},
     level    : {type: String},
     content  : {type: String}

@@ -18,7 +18,6 @@ const user = new schema.users({
 	first_name: 'Никита',
 	last_name: 'Махаличев',
 	role: 'pupil',
-	classes: [new ObjectId()],
 	tasks  : [{
 		content: '3*12-10',
 		create_timestamp: Date.parse('2022-11-21T17:24:52.748Z'),
@@ -54,8 +53,7 @@ await user.save()
 /*
 const class_ = new schema.classes({
 	title    : '3A',
-	teacher  : ObjectId('637c0155e1c4c441e229e1e9'),
-	pupils   : [ObjectId('637c00d4f60019eba4826203'), ObjectId('637c00f9f08dc7e8cbb59d83'), ObjectId('637c989b3922c3052c79a92a')]
+	members  : [ObjectId('637c00d4f60019eba4826203'), ObjectId('637c00f9f08dc7e8cbb59d83'), ObjectId('637c989b3922c3052c79a92a')]
 })
 await class_.save()
 */
@@ -68,11 +66,10 @@ const result = await schema.users.findOne({'_id': user_id, 'tasks.attempts.statu
 */
 
 /* 4. Получение всех учеников класса
-const class_id = ObjectId('637c02395d814ec03b85cf56')
-const responce = await schema.classes.findOne({'_id': class_id}, {'_id': 0, 'pupils': 1})
-pupil_ids = responce.pupils
-const result = await schema.users.find({'_id': {$in: pupil_ids}})
-
+const class_id = ObjectId('637cf20192bec933530fc362')
+const response = await schema.classes.findOne({'_id': class_id}, {'_id': 0, 'members': 1})
+members = response.members
+const result = await schema.users.find({'_id': {$in: members}, 'role': 'pupil'})
 */
 
 /* 7. Создание нового пользователя
@@ -93,12 +90,28 @@ console.log(JSON.stringify(result))
 */
 
 /* 9. Добавление ученика в класс
-user_id = ObjectId('637c005c70155b1e5f0ddc25')
-class_id = ObjectId('637c02395d814ec03b85cf56')
-result = await schema.users.find({'_id': user_id}, {'_id': 0, 'classes': 1})
-user_current_class = result.classes
-await schema.users.updateOne({'_id': user_id}, {'classes': [class_id]})
-if (user_current_class != undefined)
-	await schema.classes.updateOne({'_id': user_current_class[0]}, {$pull: {'pupils': user_id}})
-await schema.classes.updateOne({'_id': class_id}, {$push: {'pupils': user_id}})
+const user_id = ObjectId('637ceff0484241578e5eb04e')
+const class_id = ObjectId('637cf20192bec933530fc362')
+await schema.classes.updateOne({'members': user_id}, {$pull: {'members': user_id}})
+await schema.classes.updateOne({'_id': class_id}, {$push: {'members': user_id}})
 */
+
+
+
+/*const class_id = ObjectId('637cb080a062923864c960ad')
+const response = await schema.classes.findOne({'_id': class_id}, {'_id': 0, 'teacher': 1, 'pupils': 1, 'homeworks': 1})
+teacher_id = response.teacher
+pupil_ids = response.pupils
+homework_ids = response.homeworks
+homework_ids = JSON.parse(JSON.stringify(response.homeworks))
+await schema.users.updateOne({'_id': teacher_id}, {$pull: {'classes': class_id}})
+if (pupil_ids != undefined)
+	await schema.users.updateMany({'_id': {$in: pupil_ids}}, {$pull: {'classes': class_id}})
+if (homework_ids != undefined){
+	const homework_classes = await schema.classes.aggregate([{$match: {$expr: {$ne: [{$setIntersection: ["$homeworks", homework_ids]}, []]}}}, 
+															{$unwind: '$homeworks'}, 
+															{$group: {'_id': '$homeworks', 'count': {$sum: 1}}},
+															{$match: {'count': {$eq: 1}}},
+															{$project: {'_id': 1}}])
+	console.log(homework_classes)
+} */
