@@ -10,11 +10,17 @@ const Attempt = new Schema ({
 }, {_id: false, versionKey: false})
 
 const Task = new Schema ({
-    content         : {type: String},
-    create_timestamp: {type: Date, default: Date.now},
-    categories      : {type: [String]},
-    correct_answer  : {type: Number},
-    attempts        : {type: [Attempt]}
+    content          : {type: String},
+    created_timestamp: {type: Date, default: Date.now},
+    categories       : {type: [String]},
+    correct_answer   : {type: Number},
+    attempts         : {type: [Attempt]}
+}, {versionKey: false})
+
+const History = new Schema ({
+    timestamp: {type: Date, default: Date.now},
+    action   : {type: String},
+    content  : {type: String}
 }, {_id: false, versionKey: false})
 
 const User = new Schema ({
@@ -23,8 +29,8 @@ const User = new Schema ({
     first_name: {type: String},
     last_name : {type: String},
     role      : {type: String},
-    tasks     : {type: [Task]},
-    logs      : {type: [Schema.Types.ObjectId], ref: 'Log'}
+    tasks     : {type: [Schema.Types.ObjectId], ref: 'Task'},
+    history   : {type: [History]}
 }, {versionKey: false});
 
 const HomeworkTask = new Schema ({
@@ -52,6 +58,7 @@ const Log = new Schema ({
 
 
 module.exports.users     = mongoose.model('Users', User)
+module.exports.tasks     = mongoose.model('Tasks', Task)
 module.exports.classes   = mongoose.model('Classes', Class)
 module.exports.homeworks = mongoose.model('Homeworks', Homework)
 module.exports.logs      = mongoose.model('Logs', Log)
