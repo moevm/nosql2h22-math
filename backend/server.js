@@ -7,8 +7,8 @@ const mongoose   = require('mongoose');
 const schema     = require('./database/schema'); 
 
 
-mongoose.connect('mongodb://mongo:27017/test', {})
-
+//mongoose.connect('mongodb://mongo:27017/test', {})
+mongoose.connect('mongodb://127.0.0.1:27017/test', {})
 const db = mongoose.connection
 
 
@@ -59,13 +59,11 @@ result:
 {"mail":"test@test","class":[],"task":[],"_id":"63799eeb8e79c64d7ab53d4f","__v":0}
 */
 app.post('/test',  async function (req, res) {
-  let test_st = new schema.student(
-    { "mail":"test@test"},
-  );
+
   //await test_st.save();
   //test_st.mail = "second";
-  let response = await test_st.save();
-  res.send(response)
+  //let response = await test_st.save();
+  //res.send(response)
   /*
   //example how find all task => all try_solve by student
   schema.student.findById("6378693246bc1ac83ec78321").populate("task").exec(function (err, docs) {
@@ -74,6 +72,56 @@ app.post('/test',  async function (req, res) {
 
   });
   */
+  const user = new schema.users({
+    email: 'mahalichev.n@gmail.com',
+    password: 'mahalichev321',
+    first_name: 'Никита',
+    last_name: 'Махаличев',
+    role: 'pupil',
+    tasks  : [{
+      content: '3*12-10',
+      create_timestamp: Date.parse('2022-11-21T17:24:52.748Z'),
+      categories: ['subtraction', 'multiplication'],
+      correct_answer: 26,
+      attempts: [{
+        start_timestamp: Date.parse('2022-11-21T17:24:52.748Z'),
+        end_timestamp: Date.parse('2022-11-21T17:25:00.748Z'),
+        user_answer: 36,
+        status: 'not correct'
+      },
+      {
+        start_timestamp: Date.parse('2022-11-21T17:25:00.748Z'),
+        end_timestamp: Date.parse('2022-11-21T17:25:51.748Z'),
+        user_answer: 26,
+        status: 'correct'
+      }]
+    },
+    {
+      content: '5+15/3',
+      create_timestamp: Date.parse('2022-11-21T17:25:51.748Z'),
+      categories: ['addition', 'division'],
+      correct_answer: 10,
+      attempts: [{
+        start_timestamp: Date.parse('2022-11-21T17:25:51.748Z'),
+        status: 'in progress'
+      }]
+    }],
+  })
+  //let x = await user.save()
+  const new_attempt = new schema.attempts({
+    user_answer    : "lol",
+    status         : "good"
+  })
+
+  //!SECTIONlet rest = await schema.users.find({_id :ObjectId("637db962d148dc940f3bab4b"),tasks:{$in : {$mathes: {status :"in progress"}}}})
+
+
+  )
+  
+  console.log(rest)
+  
+  res.send(x)
+
 });
 app.get('/',  async function (req, res) {
 res.send("hI")

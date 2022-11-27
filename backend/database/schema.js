@@ -2,50 +2,56 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 
-const Student = new Schema ({
-    mail      : {type: String},
-    password  : {type: String},                 
-    first_name: {type: String},             
-    last_name : {type: String},           
-    class     : [{ type: Schema.Types.ObjectId, ref: 'Class' }],
-    task      : [{ type: Schema.Types.ObjectId, ref: 'Task' }],  
-});
+const Attempt = new Schema ({
+    start_timestamp: {type: Date, default: Date.now},
+    end_timestamp  : {type: Date},
+    user_answer    : {type: Number},
+    status         : {type: String}
+}, {_id: false, versionKey: false})
 
 const Task = new Schema ({
-    info          : {type: String},
-    solution      : {type: String},
-    type          : [{type: String}],
-    current_status: {type: String},
-    attempt       : {type: [{
-      status       :{type: String},
-      try_solution :{type: String}
-    }]},
-});
+    content         : {type: String},
+    create_timestamp: {type: Date, default: Date.now},
+    categories      : {type: [String]},
+    correct_answer  : {type: Number},
+    attempts        : {type: [Attempt]}
+}, {_id: false, versionKey: false})
 
-const Teacher = new Schema ({
-    mail      : {type: String},
-    password  : {type: String},                 
-    first_name: {type: String},             
-    last_name : {type: String},           
-    class     : [{type: String}],
-});
+const User = new Schema ({
+    email     : {type: String},
+    password  : {type: String},
+    first_name: {type: String},
+    last_name : {type: String},
+    role      : {type: String},
+    tasks     : {type: [Task]},
+    logs      : {type: [Schema.Types.ObjectId], ref: 'Log'}
+}, {versionKey: false});
+
+const HomeworkTask = new Schema ({
+    categories: {type: [String]},
+    count     : {type: Number}
+}, {_id: false, versionKey: false})
+
+const Homework = new Schema ({
+    created_timestamp : {type: Date, default: Date.now},
+    deadline_timestamp: {type: Date},
+    tasks             : {type: [HomeworkTask]}
+}, {versionKey: false})
 
 const Class = new Schema ({
-    title      : {type: String},
-    students  : [{ type: Schema.Types.ObjectId, ref: 'Student' }],
-    homeworks : [{ type: Schema.Types.ObjectId, ref: 'Task' }],  
-    teachers  : [{ type: Schema.Types.ObjectId, ref: 'Teacher'}],  
-});
+    title    : {type: String},
+    members   : {type: [Schema.Types.ObjectId], ref: 'User'},
+    homeworks: {type: [Schema.Types.ObjectId], ref: 'Homework'}
+}, {versionKey: false});
 
 const Log = new Schema ({
-    role     : {type: String},
-    role_id  : {type: Schema.Types.ObjectId},
-    action   : {type: String},
-    log_level: {type: String},
-})
+    timestamp: {type: Date, default: Date.now},
+    level    : {type: String},
+    content  : {type: String}
+}, {versionKey: false})
 
-
-
-module.exports.student = mongoose.model('student', Student)
-module.exports.task    = mongoose.model('task', Task)
- 
+module.exports.attempts     = mongoose.model('Attempts', Attempt)
+module.exports.users     = mongoose.model('Users', User)
+module.exports.classes   = mongoose.model('Classes', Class)
+module.exports.homeworks = mongoose.model('Homeworks', Homework)
+module.exports.logs      = mongoose.model('Logs', Log)
