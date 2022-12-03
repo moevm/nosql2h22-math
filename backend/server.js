@@ -7,8 +7,8 @@ const mongoose   = require('mongoose');
 const schema     = require('./database/schema'); 
 
 
-//mongoose.connect('mongodb://mongo:27017/test', {})
-mongoose.connect('mongodb://127.0.0.1:27017/test', {})
+mongoose.connect('mongodb://mongo:27017/test', {})
+//mongoose.connect('mongodb://127.0.0.1:27017/test', {})
 const db = mongoose.connection
 
 
