@@ -128,7 +128,7 @@ function initTask(){
     tasks.content           = math_expression.content;
     tasks.correct_answer    = math_expression.correct_answer;
     tasks.categories        = math_expression.categories;
-    tasks.created_timestamp = local_date.setMilliseconds(local_date.getDate() + hour * getRandomInt(100));
+    tasks.created_timestamp = local_date.setMilliseconds(local_date.getDate() + hour * getRandomInt(100)* Math.random());
     tasks.attempts          = []
     let status_and_probability = {"not correct" :60,
                                   "correct"     :20,
@@ -136,7 +136,7 @@ function initTask(){
     let count_try_attempts  = getRandomInt(10, 3);
     for(let i = 0; i  < count_try_attempts; i++) {
         attempts.start_timestamp =  local_date.setMilliseconds(local_date.getDate() + hour * getRandomInt(1000) * Math.random()); 
-        attempts.end_timestamp   =  local_date.setMilliseconds(local_date.getDate() + hour * getRandomInt(10)* Math.random()); 
+        attempts.end_timestamp   =  local_date.setMilliseconds(local_date.getDate() + hour * getRandomInt(10)   * Math.random()); 
         attempts.status = getOneUseProbability(status_and_probability);
         if ( attempts.status === "correct") {
             attempts.user_answer = tasks.correct_answer;
@@ -152,7 +152,7 @@ function initTask(){
         }
         tasks.attempts.push(attempts);
     }
-    console.log(tasks)    
+    //console.log(tasks)    
     //tasks.save();
     let json = JSON.stringify(tasks, null, 2);
     fs.appendFileSync("tasks.json", `\n${json} `,)

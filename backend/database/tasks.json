@@ -1,34 +1,284 @@
 
 {
   "categories": [
-    "multiplication",
     "subtracting",
     "division"
   ],
-  "_id": "638c575c872bf37269d79775",
-  "created_timestamp": "2022-12-04T08:16:28.004Z",
+  "_id": "638c62390c6f51479e38a8d2",
+  "created_timestamp": "2022-12-04T17:38:04.651Z",
   "attempts": [
     {
-      "start_timestamp": "2022-12-23T17:26:41.732Z",
-      "end_timestamp": "2022-12-23T20:45:42.574Z",
-      "user_answer": 3275.47,
+      "start_timestamp": "2023-01-02T20:29:52.702Z",
+      "end_timestamp": "2023-01-02T20:33:50.316Z",
+      "user_answer": 1139.45,
       "status": "not correct"
     },
     {
-      "start_timestamp": "2022-12-30T02:51:40.816Z",
-      "end_timestamp": "2022-12-30T07:06:36.510Z",
-      "user_answer": 3318.47,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2023-01-03T06:40:51.432Z",
-      "end_timestamp": "2023-01-03T08:17:42.665Z",
-      "user_answer": 2936.47,
+      "start_timestamp": "2023-01-05T07:58:09.532Z",
+      "end_timestamp": "2023-01-05T09:57:15.312Z",
+      "user_answer": 274.45,
       "status": "correct"
     }
   ],
-  "content": "4 * 735 - 661 / 187",
-  "correct_answer": 2936.47
+  "content": "277 - 585 / 229",
+  "correct_answer": 274.45
+} 
+{
+  "categories": [
+    "adding"
+  ],
+  "_id": "638c62390c6f51479e38a8d3",
+  "created_timestamp": "2022-12-04T13:58:39.975Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-06T16:05:25.442Z",
+      "end_timestamp": "2022-12-06T16:50:21.428Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "649 + 488",
+  "correct_answer": 1137
+} 
+{
+  "categories": [
+    "division",
+    "subtracting",
+    "multiplication"
+  ],
+  "_id": "638c62390c6f51479e38a8d4",
+  "created_timestamp": "2022-12-04T22:15:04.312Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-05T16:07:35.267Z",
+      "end_timestamp": "2022-12-05T21:24:26.603Z",
+      "user_answer": -761504.07,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-06T18:26:18.131Z",
+      "end_timestamp": "2022-12-07T00:13:07.095Z",
+      "user_answer": -761416.07,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-17T23:58:35.438Z",
+      "end_timestamp": "2022-12-18T00:08:31.177Z",
+      "user_answer": -761529.07,
+      "status": "correct"
+    }
+  ],
+  "content": "907 / 971 - 770 * 989",
+  "correct_answer": -761529.07
+} 
+{
+  "categories": [
+    "adding",
+    "division",
+    "subtracting",
+    "multiplication"
+  ],
+  "_id": "638c62390c6f51479e38a8d5",
+  "created_timestamp": "2022-12-04T10:10:30.769Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-10T18:36:27.679Z",
+      "end_timestamp": "2022-12-10T22:05:12.033Z",
+      "user_answer": -428415.25,
+      "status": "correct"
+    }
+  ],
+  "content": "652 + 537 / 195 - 535 * 802",
+  "correct_answer": -428415.25
+} 
+{
+  "categories": [
+    "adding",
+    "multiplication",
+    "subtracting"
+  ],
+  "_id": "638c62390c6f51479e38a8d6",
+  "created_timestamp": "2022-12-05T16:53:29.664Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-23T23:54:09.870Z",
+      "end_timestamp": "2022-12-24T04:29:00.753Z",
+      "user_answer": 331139,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-27T19:18:47.627Z",
+      "end_timestamp": "2022-12-27T20:35:35.288Z",
+      "user_answer": 331631,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-31T12:15:10.934Z",
+      "end_timestamp": "2022-12-31T17:48:18.556Z",
+      "user_answer": 330994,
+      "status": "correct"
+    }
+  ],
+  "content": "518 + 398 * 832 - 660",
+  "correct_answer": 330994
+} 
+{
+  "categories": [
+    "subtracting",
+    "multiplication"
+  ],
+  "_id": "638c62390c6f51479e38a8d7",
+  "created_timestamp": "2022-12-06T10:28:08.740Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-06T20:40:27.934Z",
+      "end_timestamp": "2022-12-06T22:31:02.845Z",
+      "user_answer": -39396,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-17T11:17:03.646Z",
+      "end_timestamp": "2022-12-17T14:57:28.528Z",
+      "user_answer": -39719,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-26T03:06:33.298Z",
+      "end_timestamp": "2022-12-26T04:43:41.436Z",
+      "user_answer": -39381,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-27T13:54:38.878Z",
+      "end_timestamp": "2022-12-27T14:46:17.058Z",
+      "user_answer": -39718,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-24T23:24:21.627Z",
+      "end_timestamp": "2023-01-25T01:10:59.063Z",
+      "user_answer": -40200,
+      "status": "correct"
+    }
+  ],
+  "content": "759 - 333 * 123",
+  "correct_answer": -40200
+} 
+{
+  "categories": [
+    "multiplication",
+    "division"
+  ],
+  "_id": "638c62390c6f51479e38a8d8",
+  "created_timestamp": "2022-12-04T09:02:49.004Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-04T10:54:38.642Z",
+      "end_timestamp": "2022-12-04T12:27:29.531Z",
+      "user_answer": 4143.22,
+      "status": "correct"
+    }
+  ],
+  "content": "866 * 244 / 51",
+  "correct_answer": 4143.22
+} 
+{
+  "categories": [
+    "multiplication",
+    "division",
+    "subtracting"
+  ],
+  "_id": "638c62390c6f51479e38a8d9",
+  "created_timestamp": "2022-12-08T00:23:56.055Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-16T00:24:42.957Z",
+      "end_timestamp": "2022-12-16T03:20:58.882Z",
+      "user_answer": 597.0699999999999,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-23T06:44:44.730Z",
+      "end_timestamp": "2022-12-23T07:40:27.455Z",
+      "user_answer": -152.93,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-03T02:41:59.441Z",
+      "end_timestamp": "2023-01-03T03:36:03.179Z",
+      "user_answer": 238.07,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-04T14:01:00.814Z",
+      "end_timestamp": "2023-01-04T14:10:22.948Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "203 * 276 / 459 - 479",
+  "correct_answer": -356.93
+} 
+{
+  "categories": [
+    "multiplication",
+    "subtracting"
+  ],
+  "_id": "638c62390c6f51479e38a8da",
+  "created_timestamp": "2022-12-04T19:59:57.109Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-20T08:57:02.507Z",
+      "end_timestamp": "2022-12-20T15:48:46.677Z",
+      "user_answer": 13768,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-22T02:15:03.076Z",
+      "end_timestamp": "2022-12-22T02:15:03.021Z",
+      "user_answer": 13052,
+      "status": "correct"
+    }
+  ],
+  "content": "256 * 54 - 772",
+  "correct_answer": 13052
+} 
+{
+  "categories": [
+    "multiplication",
+    "adding",
+    "division",
+    "subtracting"
+  ],
+  "_id": "638c62390c6f51479e38a8de",
+  "created_timestamp": "2022-12-04T20:07:09.935Z",
+  "attempts": [
+    {
+      "start_timestamp": "2023-01-07T08:38:17.971Z",
+      "end_timestamp": "2023-01-07T12:16:39.619Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "694 * 15 + 702 / 736 - 238",
+  "correct_answer": 10172.95
+} 
+{
+  "categories": [
+    "subtracting"
+  ],
+  "_id": "638c62390c6f51479e38a8df",
+  "created_timestamp": "2022-12-05T16:19:02.720Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-08T23:47:12.538Z",
+      "end_timestamp": "2022-12-09T05:00:32.229Z",
+      "user_answer": 498,
+      "status": "correct"
+    }
+  ],
+  "content": "798 - 300",
+  "correct_answer": 498
 } 
 {
   "categories": [
@@ -37,275 +287,794 @@
     "multiplication",
     "subtracting"
   ],
-  "_id": "638c575c872bf37269d79776",
-  "created_timestamp": "2022-12-06T08:16:28.004Z",
+  "_id": "638c62390c6f51479e38a8e0",
+  "created_timestamp": "2022-12-05T09:26:24.231Z",
   "attempts": [
     {
-      "start_timestamp": "2022-12-11T21:11:55.037Z",
-      "end_timestamp": "2022-12-11T23:11:50.427Z",
-      "user_answer": 2962.7,
+      "start_timestamp": "2022-12-10T08:44:41.883Z",
+      "end_timestamp": "2022-12-10T08:44:41.010Z",
+      "user_answer": 951.96,
       "status": "not correct"
     },
     {
-      "start_timestamp": "2022-12-15T05:17:47.699Z",
-      "end_timestamp": "2022-12-15T05:36:16.543Z",
-      "user_answer": 3155.7,
+      "start_timestamp": "2023-01-01T08:23:53.223Z",
+      "end_timestamp": "2023-01-01T10:55:54.912Z",
+      "user_answer": 911.96,
       "status": "not correct"
     },
     {
-      "start_timestamp": "2022-12-16T07:47:42.483Z",
-      "end_timestamp": "2022-12-16T14:44:35.116Z",
+      "start_timestamp": "2023-01-23T19:30:25.803Z",
+      "end_timestamp": "2023-01-24T01:07:26.522Z",
       "user_answer": null,
       "status": "in progress"
     }
   ],
-  "content": "551 + 993 / 344 * 673 - 134",
-  "correct_answer": 2359.7
+  "content": "281 + 838 / 269 * 286 - 547",
+  "correct_answer": 624.96
 } 
 {
   "categories": [
-    "subtracting",
-    "adding",
+    "adding"
+  ],
+  "_id": "638c62390c6f51479e38a8e1",
+  "created_timestamp": "2022-12-05T13:11:18.437Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-30T12:09:51.140Z",
+      "end_timestamp": "2022-12-30T12:49:39.090Z",
+      "user_answer": 1171,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-01T06:14:06.940Z",
+      "end_timestamp": "2023-01-01T07:05:32.969Z",
+      "user_answer": 1884,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-02T06:06:32.667Z",
+      "end_timestamp": "2023-01-02T09:10:06.975Z",
+      "user_answer": 1135,
+      "status": "correct"
+    }
+  ],
+  "content": "949 + 186",
+  "correct_answer": 1135
+} 
+{
+  "categories": [
     "division",
+    "multiplication",
+    "subtracting",
+    "adding"
+  ],
+  "_id": "638c62390c6f51479e38a8e2",
+  "created_timestamp": "2022-12-05T10:19:37.011Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-11T15:08:50.320Z",
+      "end_timestamp": "2022-12-11T15:23:13.217Z",
+      "user_answer": 2.8700000000000045,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-24T16:15:44.528Z",
+      "end_timestamp": "2022-12-24T21:55:06.313Z",
+      "user_answer": -78.13,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-25T20:02:00.566Z",
+      "end_timestamp": "2022-12-25T22:30:12.839Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "295 / 597 * 619 - 787 + 389",
+  "correct_answer": -92.13
+} 
+{
+  "categories": [
+    "division"
+  ],
+  "_id": "638c62390c6f51479e38a8e3",
+  "created_timestamp": "2022-12-06T16:34:40.762Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-10T15:55:34.183Z",
+      "end_timestamp": "2022-12-10T17:30:12.233Z",
+      "user_answer": 261.56,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-11T00:14:00.369Z",
+      "end_timestamp": "2022-12-11T04:48:34.104Z",
+      "user_answer": 514.56,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-05T07:44:20.836Z",
+      "end_timestamp": "2023-01-05T13:44:41.001Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "228 / 409",
+  "correct_answer": 0.56
+} 
+{
+  "categories": [
+    "adding"
+  ],
+  "_id": "638c62390c6f51479e38a8e4",
+  "created_timestamp": "2022-12-06T20:02:26.306Z",
+  "attempts": [
+    {
+      "start_timestamp": "2023-01-05T05:27:58.645Z",
+      "end_timestamp": "2023-01-05T09:59:47.740Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "576 + 856",
+  "correct_answer": 1432
+} 
+{
+  "categories": [
+    "adding",
     "multiplication"
   ],
-  "_id": "638c575c872bf37269d79777",
-  "created_timestamp": "2022-12-06T10:16:28.004Z",
+  "_id": "638c62390c6f51479e38a8e5",
+  "created_timestamp": "2022-12-04T18:46:27.502Z",
   "attempts": [
     {
-      "start_timestamp": "2022-12-07T20:06:51.450Z",
-      "end_timestamp": "2022-12-07T20:50:47.432Z",
-      "user_answer": 498.47,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2022-12-09T08:24:33.543Z",
-      "end_timestamp": "2022-12-09T08:37:47.529Z",
+      "start_timestamp": "2022-12-10T03:57:54.787Z",
+      "end_timestamp": "2022-12-10T06:25:50.531Z",
       "user_answer": null,
       "status": "in progress"
     }
   ],
-  "content": "53 - 458 + 488 / 660 * 616",
-  "correct_answer": 50.47
+  "content": "836 + 274 * 57",
+  "correct_answer": 16454
+} 
+{
+  "categories": [
+    "multiplication",
+    "subtracting",
+    "adding",
+    "division"
+  ],
+  "_id": "638c62390c6f51479e38a8e6",
+  "created_timestamp": "2022-12-04T15:11:04.271Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-19T04:45:03.210Z",
+      "end_timestamp": "2022-12-19T05:28:06.165Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "334 * 718 - 100 + 297 / 726",
+  "correct_answer": 239712.41
 } 
 {
   "categories": [
     "adding",
-    "multiplication",
     "subtracting"
   ],
-  "_id": "638c575c872bf37269d79778",
-  "created_timestamp": "2022-12-05T14:16:28.004Z",
+  "_id": "638c62390c6f51479e38a8e7",
+  "created_timestamp": "2022-12-06T23:33:48.503Z",
   "attempts": [
     {
-      "start_timestamp": "2022-12-08T07:30:22.195Z",
-      "end_timestamp": "2022-12-08T12:27:02.575Z",
-      "user_answer": 193065,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2022-12-11T16:52:06.496Z",
-      "end_timestamp": "2022-12-11T18:17:34.040Z",
-      "user_answer": 193466,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2022-12-18T13:14:46.683Z",
-      "end_timestamp": "2022-12-18T14:31:05.469Z",
-      "user_answer": 193247,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2022-12-25T18:49:34.149Z",
-      "end_timestamp": "2022-12-25T22:03:59.202Z",
-      "user_answer": 193013,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2023-01-05T17:42:15.192Z",
-      "end_timestamp": "2023-01-05T19:44:23.137Z",
-      "user_answer": 193394,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2023-01-11T19:50:18.996Z",
-      "end_timestamp": "2023-01-12T00:03:56.650Z",
-      "user_answer": 193883,
-      "status": "not correct"
+      "start_timestamp": "2022-12-12T08:58:29.854Z",
+      "end_timestamp": "2022-12-12T13:40:29.527Z",
+      "user_answer": 675,
+      "status": "correct"
     }
   ],
-  "content": "169 + 257 * 752 - 436",
-  "correct_answer": 192997
-} 
-{
-  "categories": [
-    "adding",
-    "subtracting",
-    "multiplication"
-  ],
-  "_id": "638c575c872bf37269d79779",
-  "created_timestamp": "2022-12-08T08:16:28.004Z",
-  "attempts": [
-    {
-      "start_timestamp": "2022-12-18T06:09:55.061Z",
-      "end_timestamp": "2022-12-18T11:00:05.487Z",
-      "user_answer": null,
-      "status": "in progress"
-    }
-  ],
-  "content": "447 + 548 - 861 * 549",
-  "correct_answer": -471694
+  "content": "675 + 60 - 60",
+  "correct_answer": 675
 } 
 {
   "categories": [
     "subtracting",
-    "multiplication",
     "division",
     "adding"
   ],
-  "_id": "638c575c872bf37269d7977a",
-  "created_timestamp": "2022-12-05T15:16:28.004Z",
+  "_id": "638c62390c6f51479e38a8e8",
+  "created_timestamp": "2022-12-06T20:18:37.632Z",
   "attempts": [
     {
-      "start_timestamp": "2023-01-01T08:02:13.919Z",
-      "end_timestamp": "2023-01-01T10:25:39.098Z",
-      "user_answer": 2711.23,
+      "start_timestamp": "2023-01-08T01:47:30.647Z",
+      "end_timestamp": "2023-01-08T09:31:26.522Z",
+      "user_answer": 1482.97,
       "status": "not correct"
     },
     {
-      "start_timestamp": "2023-01-21T10:18:08.488Z",
-      "end_timestamp": "2023-01-21T11:48:21.207Z",
-      "user_answer": 2110.23,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2023-01-22T02:54:32.813Z",
-      "end_timestamp": "2023-01-22T02:58:54.731Z",
-      "user_answer": 1799.23,
+      "start_timestamp": "2023-01-08T23:37:56.297Z",
+      "end_timestamp": "2023-01-09T01:24:31.141Z",
+      "user_answer": 623.97,
       "status": "correct"
     }
   ],
-  "content": "859 - 92 * 359 / 852 + 979",
-  "correct_answer": 1799.23
+  "content": "383 - 862 / 833 + 242",
+  "correct_answer": 623.97
 } 
 {
   "categories": [
     "subtracting",
-    "division",
-    "multiplication"
+    "multiplication",
+    "adding",
+    "division"
   ],
-  "_id": "638c575c872bf37269d7977b",
-  "created_timestamp": "2022-12-08T09:16:28.004Z",
+  "_id": "638c62390c6f51479e38a8e9",
+  "created_timestamp": "2022-12-05T15:24:14.190Z",
   "attempts": [
     {
-      "start_timestamp": "2022-12-09T01:15:48.663Z",
-      "end_timestamp": "2022-12-09T02:32:14.932Z",
-      "user_answer": 326.33,
-      "status": "correct"
-    }
-  ],
-  "content": "680 - 66 / 92 * 493",
-  "correct_answer": 326.33
-} 
-{
-  "categories": [
-    "subtracting"
-  ],
-  "_id": "638c575c872bf37269d7977c",
-  "created_timestamp": "2022-12-08T05:16:28.004Z",
-  "attempts": [
-    {
-      "start_timestamp": "2022-12-22T13:57:56.781Z",
-      "end_timestamp": "2022-12-22T17:46:17.239Z",
-      "user_answer": 1297,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2022-12-23T15:37:32.080Z",
-      "end_timestamp": "2022-12-23T15:54:54.491Z",
-      "user_answer": 702,
-      "status": "correct"
-    }
-  ],
-  "content": "812 - 110",
-  "correct_answer": 702
-} 
-{
-  "categories": [
-    "division",
-    "subtracting",
-    "multiplication"
-  ],
-  "_id": "638c575c872bf37269d7977d",
-  "created_timestamp": "2022-12-04T21:16:28.004Z",
-  "attempts": [
-    {
-      "start_timestamp": "2022-12-10T17:51:43.651Z",
-      "end_timestamp": "2022-12-10T19:33:35.307Z",
-      "user_answer": -281830.76,
-      "status": "not correct"
-    },
-    {
-      "start_timestamp": "2022-12-14T10:48:40.725Z",
-      "end_timestamp": "2022-12-14T12:11:45.913Z",
+      "start_timestamp": "2022-12-21T22:09:46.876Z",
+      "end_timestamp": "2022-12-22T00:43:49.712Z",
       "user_answer": null,
       "status": "in progress"
     }
   ],
-  "content": "885 / 395 - 698 * 405",
-  "correct_answer": -282687.76
+  "content": "241 - 527 * 477 + 444 / 133",
+  "correct_answer": -251134.66
 } 
 {
   "categories": [
-    "adding",
+    "division",
+    "multiplication",
     "subtracting"
   ],
-  "_id": "638c575c872bf37269d7977f",
-  "created_timestamp": "2022-12-06T03:16:28.004Z",
+  "_id": "638c62390c6f51479e38a8ea",
+  "created_timestamp": "2022-12-07T07:12:48.297Z",
   "attempts": [
     {
-      "start_timestamp": "2022-12-09T19:37:24.464Z",
-      "end_timestamp": "2022-12-09T22:38:07.323Z",
-      "user_answer": 240,
+      "start_timestamp": "2022-12-15T04:48:32.173Z",
+      "end_timestamp": "2022-12-15T05:00:48.747Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "571 / 97 * 978 - 428",
+  "correct_answer": 5329.09
+} 
+{
+  "categories": [
+    "multiplication"
+  ],
+  "_id": "638c62390c6f51479e38a8eb",
+  "created_timestamp": "2022-12-06T13:02:32.984Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-24T03:50:32.261Z",
+      "end_timestamp": "2022-12-24T08:41:04.747Z",
+      "user_answer": 187100,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-02T08:07:56.999Z",
+      "end_timestamp": "2023-01-02T14:02:36.423Z",
+      "user_answer": 187354,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-10T02:11:19.688Z",
+      "end_timestamp": "2023-01-10T03:40:12.028Z",
+      "user_answer": 187647,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-23T11:41:34.720Z",
+      "end_timestamp": "2023-01-23T11:41:34.023Z",
+      "user_answer": 186888,
       "status": "correct"
     }
   ],
-  "content": "314 + 919 - 993",
-  "correct_answer": 240
+  "content": "312 * 599",
+  "correct_answer": 186888
 } 
 {
   "categories": [
+    "division",
     "adding",
     "multiplication",
     "subtracting"
   ],
-  "_id": "638c575c872bf37269d79780",
-  "created_timestamp": "2022-12-06T09:16:28.004Z",
+  "_id": "638c624dfe2046ba5b699ddd",
+  "created_timestamp": "2022-12-06T04:36:19.568Z",
   "attempts": [
     {
-      "start_timestamp": "2022-12-08T12:25:07.139Z",
-      "end_timestamp": "2022-12-08T12:25:07.008Z",
+      "start_timestamp": "2022-12-18T10:19:04.970Z",
+      "end_timestamp": "2022-12-18T10:19:04.018Z",
+      "user_answer": 11970.1,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-19T02:17:20.641Z",
+      "end_timestamp": "2022-12-19T02:17:20.018Z",
+      "user_answer": 12383.1,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-06T14:45:40.534Z",
+      "end_timestamp": "2023-01-06T15:50:05.840Z",
+      "user_answer": 12115.1,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-12T12:39:09.698Z",
+      "end_timestamp": "2023-01-12T12:53:30.107Z",
+      "user_answer": 12852.1,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-14T12:23:20.206Z",
+      "end_timestamp": "2023-01-14T12:23:20.014Z",
+      "user_answer": 11915.1,
+      "status": "correct"
+    }
+  ],
+  "content": "364 / 40 + 997 * 12 - 58",
+  "correct_answer": 11915.1
+} 
+{
+  "categories": [
+    "subtracting",
+    "adding",
+    "multiplication"
+  ],
+  "_id": "638c624dfe2046ba5b699dde",
+  "created_timestamp": "2022-12-06T00:55:28.471Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-26T14:51:49.776Z",
+      "end_timestamp": "2022-12-26T14:51:49.026Z",
+      "user_answer": 686321,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-16T10:47:25.300Z",
+      "end_timestamp": "2023-01-16T13:38:29.808Z",
+      "user_answer": 685605,
+      "status": "correct"
+    }
+  ],
+  "content": "58 - 114 + 901 * 761",
+  "correct_answer": 685605
+} 
+{
+  "categories": [
+    "multiplication"
+  ],
+  "_id": "638c624dfe2046ba5b699ddf",
+  "created_timestamp": "2022-12-06T15:20:31.895Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-14T06:24:52.394Z",
+      "end_timestamp": "2022-12-14T07:17:51.597Z",
+      "user_answer": 259797,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-17T16:38:17.139Z",
+      "end_timestamp": "2022-12-17T18:01:43.302Z",
+      "user_answer": 260662,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-23T08:14:36.284Z",
+      "end_timestamp": "2022-12-23T13:49:01.915Z",
+      "user_answer": 260672,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-25T02:50:04.833Z",
+      "end_timestamp": "2022-12-25T10:28:33.557Z",
       "user_answer": null,
       "status": "in progress"
     }
   ],
-  "content": "571 + 659 * 657 - 492",
-  "correct_answer": 433042
+  "content": "339 * 766",
+  "correct_answer": 259674
+} 
+{
+  "categories": [
+    "adding",
+    "division"
+  ],
+  "_id": "638c624dfe2046ba5b699de0",
+  "created_timestamp": "2022-12-04T20:50:23.086Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-10T04:02:53.191Z",
+      "end_timestamp": "2022-12-10T04:02:53.009Z",
+      "user_answer": 752.0899999999999,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-11T09:36:51.517Z",
+      "end_timestamp": "2022-12-11T11:33:06.696Z",
+      "user_answer": 808.0899999999999,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-14T12:48:52.351Z",
+      "end_timestamp": "2022-12-14T13:44:44.354Z",
+      "user_answer": 400.09,
+      "status": "correct"
+    }
+  ],
+  "content": "399 + 813 / 749",
+  "correct_answer": 400.09
+} 
+{
+  "categories": [
+    "division",
+    "subtracting",
+    "multiplication"
+  ],
+  "_id": "638c624dfe2046ba5b699de1",
+  "created_timestamp": "2022-12-04T09:37:49.998Z",
+  "attempts": [
+    {
+      "start_timestamp": "2023-01-05T20:28:11.182Z",
+      "end_timestamp": "2023-01-05T23:39:58.782Z",
+      "user_answer": -463877.68,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-02-12T02:32:15.334Z",
+      "end_timestamp": "2023-02-12T03:07:10.115Z",
+      "user_answer": -464344.68,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-03-06T16:29:39.481Z",
+      "end_timestamp": "2023-03-06T19:08:04.140Z",
+      "user_answer": -464781.68,
+      "status": "correct"
+    }
+  ],
+  "content": "671 / 510 - 517 * 899",
+  "correct_answer": -464781.68
+} 
+{
+  "categories": [
+    "subtracting",
+    "division",
+    "multiplication",
+    "adding"
+  ],
+  "_id": "638c624dfe2046ba5b699de2",
+  "created_timestamp": "2022-12-04T10:13:25.922Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-07T14:31:19.674Z",
+      "end_timestamp": "2022-12-07T14:55:58.641Z",
+      "user_answer": 1754.03,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-23T22:44:28.244Z",
+      "end_timestamp": "2022-12-23T22:44:28.023Z",
+      "user_answer": 1625.03,
+      "status": "correct"
+    }
+  ],
+  "content": "769 - 38 / 807 * 870 + 897",
+  "correct_answer": 1625.03
 } 
 {
   "categories": [
     "division"
   ],
-  "_id": "638c575c872bf37269d79781",
-  "created_timestamp": "2022-12-04T16:16:28.004Z",
+  "_id": "638c624dfe2046ba5b699de3",
+  "created_timestamp": "2022-12-06T14:33:49.809Z",
   "attempts": [
     {
-      "start_timestamp": "2022-12-20T04:17:42.317Z",
-      "end_timestamp": "2022-12-20T05:40:09.489Z",
-      "user_answer": 1.75,
+      "start_timestamp": "2022-12-06T20:42:29.280Z",
+      "end_timestamp": "2022-12-06T20:42:29.006Z",
+      "user_answer": 421.54,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-08T19:14:51.644Z",
+      "end_timestamp": "2022-12-09T02:52:29.810Z",
+      "user_answer": 200.54,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-20T15:00:25.234Z",
+      "end_timestamp": "2022-12-20T15:07:02.358Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "670 / 435",
+  "correct_answer": 1.54
+} 
+{
+  "categories": [
+    "adding"
+  ],
+  "_id": "638c624dfe2046ba5b699de4",
+  "created_timestamp": "2022-12-06T06:04:16.435Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-17T09:16:05.035Z",
+      "end_timestamp": "2022-12-17T10:13:08.609Z",
+      "user_answer": 439,
       "status": "correct"
     }
   ],
-  "content": "682 / 389",
-  "correct_answer": 1.75
+  "content": "230 + 209",
+  "correct_answer": 439
+} 
+{
+  "categories": [
+    "division"
+  ],
+  "_id": "638c624dfe2046ba5b699de5",
+  "created_timestamp": "2022-12-07T03:53:25.319Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-17T05:32:56.344Z",
+      "end_timestamp": "2022-12-17T08:58:05.908Z",
+      "user_answer": 328.19,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-23T23:19:43.357Z",
+      "end_timestamp": "2022-12-24T00:23:30.796Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "845 / 708",
+  "correct_answer": 1.19
+} 
+{
+  "categories": [
+    "adding",
+    "division",
+    "multiplication"
+  ],
+  "_id": "638c624dfe2046ba5b699de6",
+  "created_timestamp": "2022-12-05T14:50:13.843Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-22T01:14:10.717Z",
+      "end_timestamp": "2022-12-22T05:44:24.878Z",
+      "user_answer": 2391.42,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-23T22:21:31.711Z",
+      "end_timestamp": "2022-12-23T22:57:59.864Z",
+      "user_answer": 3093.42,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-20T12:57:01.846Z",
+      "end_timestamp": "2023-01-20T16:31:07.033Z",
+      "user_answer": 2377.42,
+      "status": "correct"
+    }
+  ],
+  "content": "566 + 493 / 175 * 643",
+  "correct_answer": 2377.42
+} 
+{
+  "categories": [
+    "multiplication",
+    "adding",
+    "subtracting",
+    "division"
+  ],
+  "_id": "638c624dfe2046ba5b699de7",
+  "created_timestamp": "2022-12-05T01:23:50.255Z",
+  "attempts": [
+    {
+      "start_timestamp": "2023-01-01T18:09:32.328Z",
+      "end_timestamp": "2023-01-01T18:18:20.479Z",
+      "user_answer": 454362.01,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-03T15:52:12.592Z",
+      "end_timestamp": "2023-01-03T17:39:49.828Z",
+      "user_answer": 454160.01,
+      "status": "correct"
+    }
+  ],
+  "content": "677 * 670 + 571 - 897 / 904",
+  "correct_answer": 454160.01
+} 
+{
+  "categories": [
+    "multiplication",
+    "adding",
+    "division",
+    "subtracting"
+  ],
+  "_id": "638c624dfe2046ba5b699de8",
+  "created_timestamp": "2022-12-05T01:51:56.774Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-05T20:23:26.808Z",
+      "end_timestamp": "2022-12-05T20:47:58.753Z",
+      "user_answer": 626899.66,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-06T12:49:20.859Z",
+      "end_timestamp": "2022-12-06T19:05:42.560Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "772 * 812 + 648 / 244 - 245",
+  "correct_answer": 626621.66
+} 
+{
+  "categories": [
+    "multiplication",
+    "subtracting",
+    "division",
+    "adding"
+  ],
+  "_id": "638c624dfe2046ba5b699df2",
+  "created_timestamp": "2022-12-04T18:28:17.703Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-11T00:25:18.762Z",
+      "end_timestamp": "2022-12-11T04:51:34.489Z",
+      "user_answer": 358815.43,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2023-01-05T07:18:19.485Z",
+      "end_timestamp": "2023-01-05T08:04:41.727Z",
+      "user_answer": 357816.43,
+      "status": "correct"
+    }
+  ],
+  "content": "608 * 588 - 710 / 451 + 314",
+  "correct_answer": 357816.43
+} 
+{
+  "categories": [
+    "subtracting",
+    "multiplication"
+  ],
+  "_id": "638c624dfe2046ba5b699df3",
+  "created_timestamp": "2022-12-05T15:27:25.935Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-10T22:45:54.728Z",
+      "end_timestamp": "2022-12-11T02:04:47.412Z",
+      "user_answer": -75372,
+      "status": "correct"
+    }
+  ],
+  "content": "268 - 122 * 620",
+  "correct_answer": -75372
+} 
+{
+  "categories": [
+    "division",
+    "adding",
+    "subtracting",
+    "multiplication"
+  ],
+  "_id": "638c624dfe2046ba5b699df4",
+  "created_timestamp": "2022-12-04T20:11:35.223Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-27T00:44:59.720Z",
+      "end_timestamp": "2022-12-27T03:33:41.024Z",
+      "user_answer": -21551.88,
+      "status": "correct"
+    }
+  ],
+  "content": "94 / 768 + 179 - 31 * 701",
+  "correct_answer": -21551.88
+} 
+{
+  "categories": [
+    "multiplication",
+    "division",
+    "subtracting",
+    "adding"
+  ],
+  "_id": "638c624dfe2046ba5b699df5",
+  "created_timestamp": "2022-12-05T07:47:05.928Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-07T00:09:30.261Z",
+      "end_timestamp": "2022-12-07T07:17:22.325Z",
+      "user_answer": 105.55000000000001,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-21T09:36:37.455Z",
+      "end_timestamp": "2022-12-21T12:50:10.543Z",
+      "user_answer": -242.45,
+      "status": "correct"
+    }
+  ],
+  "content": "600 * 81 / 777 - 305 + 0",
+  "correct_answer": -242.45
+} 
+{
+  "categories": [
+    "division",
+    "multiplication",
+    "subtracting"
+  ],
+  "_id": "638c624dfe2046ba5b699df6",
+  "created_timestamp": "2022-12-04T20:42:28.193Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-24T15:14:40.064Z",
+      "end_timestamp": "2022-12-24T17:06:05.761Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "248 / 85 * 541 - 188",
+  "correct_answer": 1390.45
+} 
+{
+  "categories": [
+    "division",
+    "subtracting",
+    "multiplication",
+    "adding"
+  ],
+  "_id": "638c624dfe2046ba5b699df7",
+  "created_timestamp": "2022-12-04T09:26:43.673Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-07T05:25:29.192Z",
+      "end_timestamp": "2022-12-07T08:39:48.424Z",
+      "user_answer": -168765.17,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-15T13:00:58.449Z",
+      "end_timestamp": "2022-12-15T18:20:57.942Z",
+      "user_answer": -169268.17,
+      "status": "not correct"
+    },
+    {
+      "start_timestamp": "2022-12-15T22:05:51.783Z",
+      "end_timestamp": "2022-12-15T23:07:05.189Z",
+      "user_answer": null,
+      "status": "in progress"
+    }
+  ],
+  "content": "825 / 998 - 195 * 874 + 687",
+  "correct_answer": -169742.17
+} 
+{
+  "categories": [
+    "division",
+    "subtracting",
+    "multiplication",
+    "adding"
+  ],
+  "_id": "638c624dfe2046ba5b699df8",
+  "created_timestamp": "2022-12-06T17:39:32.899Z",
+  "attempts": [
+    {
+      "start_timestamp": "2022-12-18T00:52:38.413Z",
+      "end_timestamp": "2022-12-18T03:26:03.145Z",
+      "user_answer": -21193.78,
+      "status": "correct"
+    }
+  ],
+  "content": "977 / 440 - 712 * 31 + 876",
+  "correct_answer": -21193.78
 } 
