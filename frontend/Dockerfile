@@ -5,5 +5,5 @@ WORKDIR /usr/src/app
 COPY package.json package-lock.json ./
 RUN npm install 
 COPY . .
-CMD npm start
-EXPOSE 3000
+CMD npm run dev -- --host
+EXPOSE 5173
