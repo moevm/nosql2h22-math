@@ -3,7 +3,7 @@ const fs        = require("fs");
 const nodeEval  = require('node-eval');
 const { faker } = require('@faker-js/faker');
 const mongoose  = require("mongoose");
-
+const { exec }  = require("child_process");
 
 const tasks     = new schema.tasks()
 const logs      = new schema.logs()
@@ -13,7 +13,6 @@ const homeworks = new schema.homeworks()
 const attempts  = new schema.attempts()
 const histories = new schema.histories()
 const hour = 60 * 60 * 1000;
-
 
 function getOneUseProbability(map){     
     let randomProbability =  getRandomInt(100);    /* math.Random approximately uniform distribution */
@@ -27,7 +26,6 @@ function getOneUseProbability(map){
     }
     return "Error function getOneUseProbability"
 }
-
 
 function initUser(){
         let role_and_probability = {"pupil"        :50,
@@ -120,7 +118,6 @@ async function creatTask(){
     console.log(createMathExpression())
 }
 
-
 function initTask(){
     let local_date          = new Date();
     let math_expression     = createMathExpression();
@@ -158,7 +155,6 @@ function initTask(){
     fs.appendFileSync("tasks.json", `\n${json} `,)
     return tasks;
 }
-
 
 async function initDb(){
     let count_users = getRandomInt(1,20);
