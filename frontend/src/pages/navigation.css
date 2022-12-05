@@ -1,0 +1,36 @@
+.navbar {
+    font-size: 32px;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.navbar * {
+    color: rgba(0, 0, 0, 0.85);
+}
+
+a:hover {
+    color: rgba(100, 100, 100, 0.85);
+}
+
+.navbar > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    position: fixed;
+}
+
+.navbar > div > * {
+    margin: 20px;
+}
+
+.center {
+    left: 50%;
+    transform: translate(-50%, 50%);
+}
+
+.right {
+    right: 1%;
+    transform: translate(0%, 50%);
+}

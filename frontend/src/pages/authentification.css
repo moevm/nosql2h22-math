@@ -1,0 +1,67 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.form > *:not(:last-child) {
+    margin-bottom: 40px;
+}
+
+.role-picker {
+    display: flex;
+}
+
+.role-button {
+    width: 170px;
+    height: 56px;
+    border-radius: 28px !important;
+}
+
+.role-button-active {
+    background: #E37222 !important;
+    color: #FFFFFF !important;
+}
+
+.role-button-inactive {
+    background: #F5F0F6 !important;
+    border: 1px solid #79747E !important;
+    font-size: 20px !important;
+    color: #79747E !important;
+}
+
+.pupil-button {
+    margin-right: 20px !important;
+}
+
+.main-button {
+    width: 360px;
+    height: 56px;
+    border-radius: 28px !important;
+    background: #E37222 !important;
+}
+
+.button-text {
+    font-size: 20px !important;
+    color: #FFFFFF !important;
+}
+
+.sub {
+    text-align: center;
+}
+
+.sub div {
+    transform: translate(0px, -10px);
+    font-size: 24px;
+}
+
+.sub-button {
+    width: 280px;
+    height: 40px;
+    border-radius: 20px !important;
+    background: #07889B !important;
+}
