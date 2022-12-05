@@ -1,15 +1,14 @@
 categories = ['addition', 'subtraction', 'multiplication', 'division']
+order = categories.map(value => ({ value, sort: Math.random() }))
+                  .sort((a, b) => a.sort - b.sort)
+                  .map(({ value }) => value)
+values = []
 categories_dict = {
     'addition': '+',
     'subtraction': '-',
     'multiplication': 'x',
     'division': '/'
 }
-
-order = categories.map(value => ({ value, sort: Math.random() }))
-                  .sort((a, b) => a.sort - b.sort)
-                  .map(({ value }) => value)
-values = []
 content = ""
 next = 0
 switch (true){
@@ -53,6 +52,13 @@ for (let index = 0; index < order.length; index++){
 for (let index = 0; index < order.length; index++)
     content += (categories_dict[order[index]] + values[index+1])
 
+division_index = order.indexOf('division')
+if (division_index != -1){
+    values[division_index] /= values[division_index + 1]
+    values.splice(division_index + 1, 1)
+    order.splice(division_index, 1)
+}
+
 multiplication_index = order.indexOf('multiplication')
 if (multiplication_index != -1){
     values[multiplication_index] *= values[multiplication_index + 1]
@@ -60,12 +66,6 @@ if (multiplication_index != -1){
     order.splice(multiplication_index, 1)
 }
 
-division_index = order.indexOf('division')
-if (division_index != -1){
-    values[division_index] /= values[division_index + 1]
-    values.splice(division_index + 1, 1)
-    order.splice(division_index, 1)
-}
 
 while (order.length){
     values[0] = (order.shift() === 'addition') ? (values[0] + values[1]) : (values[0] - values[1])
