@@ -53,18 +53,18 @@ for (let index = 0; index < order.length; index++){
 for (let index = 0; index < order.length; index++)
     content += (categories_dict[order[index]] + values[index+1])
 
-multiplication_index = order.indexOf('multiplication')
-if (multiplication_index != -1){
-    values[multiplication_index] *= values[multiplication_index + 1]
-    values.splice(multiplication_index + 1, 1)
-    order.splice(multiplication_index, 1)
-}
-
 division_index = order.indexOf('division')
 if (division_index != -1){
     values[division_index] /= values[division_index + 1]
     values.splice(division_index + 1, 1)
     order.splice(division_index, 1)
+}
+
+multiplication_index = order.indexOf('multiplication')
+if (multiplication_index != -1){
+    values[multiplication_index] *= values[multiplication_index + 1]
+    values.splice(multiplication_index + 1, 1)
+    order.splice(multiplication_index, 1)
 }
 
 while (order.length){
