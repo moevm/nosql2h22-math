@@ -5,12 +5,18 @@ const schema = require('../database/schema')
 
 // export database
 router.get('/', async (req,res) => {
+	// const userId = req.session.userId;
+	// res.status(401).send("Log in to proceed")
+	// res.status(403).send("User must be an administrator to export data")
 	res.json({databaseContent: "comes here"});
 });
 
 // import database (replace existing)
 router.post("/", async (req, res) => {
 	const databaseContent = req.body.databaseContent;
+	// const userId = req.session.userId;
+	// res.status(401).send("Log in to proceed")
+	// res.status(403).send("User must be an administrator to reset data")
 	res.send("Ok");
 });
 
@@ -22,30 +28,56 @@ router.post("/submit", async (req, res) => {
 	const startTime = req.body.startTime;
 	const endTime = req.body.endTime;
 	// res.status(400).send("taskId is not ObjectId hex string")
-	// res.status(403).send("Task does not belong to a user")
+	// res.status(403).send("Task belongs to a different user")
 	res.send("correct")
 	// res.send("not correct")
 });
 
 // get all active homeworks and their progress for pupil
-// [not needed yet]
+router.get("/personal/homeworks", async (req, res) => {
+	// const userId = req.session.userId;
+	// res.status(401).send("Log in as a pupil to proceed")
+	res.json({homeworks: "go here"});
+	/*
+	[
+		{
+			id: "2054fa1209a9845c2aa02003",
+			deadline: "2022-12-07T00:00:00.000Z",
+			tasks: [
+				{
+					categories: ["subtraction", "division"],
+					progress: 0,
+					requirement: 10
+				},
+				...
+			]
+		},
+		...
+	]
+	 */
+});
 
 // get task by categories; if unsolved task exists, return it instead of creating a new task
 router.get("/task", async (req, res) => {
 	// const userId = req.session.userId;
 	const categories = req.query.categories.split("+");
 	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Unauthorized")
+	// res.status(401).send("Log in as a pupil to proceed")
 	res.json({task: "goes here"});
 });
 
 // get categories from last task pupil tried to solve before
-// [not needed yet]
+router.get("/personal/last-categories", async (req, res) => {
+	// const userId = req.session.userId;
+	// res.status(401).send("Log in as a pupil to proceed")
+	res.json(["subtraction", "division"])
+});
 
 // get attempts for a user filtered by...
 router.get("/personal/attempts",
 	async (req, res) => {
 		// const userId = req.session.userId;
+		const requestedUserId = req.query.userId; // если запрос со стороны учителя, то userId !== requestedUserId
 		const sortByDatetime = req.query.sortByDatetime; // "asc" | "desc" | null
 		const sortBySolvingTime = req.query.sortBySolvingTime; // "asc" | "desc" | null
 		const taskContent = req.query.taskContent;
@@ -53,7 +85,8 @@ router.get("/personal/attempts",
 		const answer = req.query.answer;
 		const verdict = req.query.verdict; // null | "correct" | "not correct" | "in progress"
 		// res.status(400).send(`${something} is not ${some_type}`)
-		// res.status(401).send("Unauthorized")
+		// res.status(401).send("Log in to proceed")
+		// res.status(403).send("Requested pupil is not in any of this teacher's classes")
 		res.json({
 			attempts: [
 				{
@@ -85,8 +118,7 @@ router.post("/classes/homeworks", async (req, res) => {
 	const homeworkTasks = JSON.parse(req.body.homeworkTasks);
 	// const userId = req.session.userId;
 	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("Forbidden")
+	// res.status(401).send("Log in as a teacher to proceed")
 	res.status(201).send("Created");
 });
 
@@ -94,17 +126,16 @@ router.post("/classes/homeworks", async (req, res) => {
 router.post("/classes", async (req, res) => {
 	const className = req.body.className;
 	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Unauthorized")
+	// res.status(401).send("Log in as a teacher to proceed")
 	// res.status(409).send(`Class named "${className}" already exists`)
 	res.status(201).json({classId: "goes here"});
 });
 
-// add a pupil to class
+// join to class as a pupil
 router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 	const classId = req.params.id;
 	// const userId = req.session.userId;
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("Only a pupil can join a class")
+	// res.status(401).send("Log in as a pupil to proceed")
 	// res.status(409).send("Pupil already present in a class")
 	res.send("Ok");
 });
@@ -113,8 +144,7 @@ router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 	const classId = req.params.id;
 	// const userId = req.session.userId;
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("Forbidden")
+	// res.status(401).send("Log in as a teacher to proceed")
 	res.json({stats: "go here"})
 	/*[
 	{
@@ -138,7 +168,7 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 // get aggregated statistics for all classes by teacher (Add Class Process Page)
 router.get("/classes", async (req, res) => {
 	// const userId = req.session.userId;
-	// res.status(401).send("Log in to proceed")
+	// res.status(401).send("Log in as a teacher to proceed")
 	res.json({data: "goes here"});
 	/*
 	[
@@ -159,7 +189,7 @@ router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 	const classId = req.params.id;
 	// const userId = req.session.userId;
 	// res.status(400).send("Class id is not an ObjectId hex string")
-	// res.status(401).send("Log in to proceed")
+	// res.status(401).send("Log in as a teacher to proceed")
 	// res.status(403).send("Teacher must run a class to delete it")
 	// res.status(404).send("Class not found")
 	res.json("Ok");
@@ -196,7 +226,7 @@ router.get("/history", async (req, res) => {
 	// const adminId = req.session.userId;
 	// res.status(400).send(`${something} is not ${some_type}`)
 	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("Forbidden")
+	// res.status(403).send("User must be an administrator")
 	res.json({history: "comes here"});
 	/*
 	[
@@ -220,7 +250,7 @@ router.get("/logs", async (req, res) => {
 	const messageText = req.query.message;
 	// res.status(400).send(`${something} is not ${some_type}`)
 	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("Forbidden")
+	// res.status(403).send("User must be an administrator")
 	res.json({log: "comes here"});
 	/*
 	[
@@ -233,9 +263,6 @@ router.get("/logs", async (req, res) => {
 	]
 	 */
 });
-
-// get attempts by class & filter by...
-// [not needed yet]
 
 // fallback
 router.get("*", (req, res) => {
