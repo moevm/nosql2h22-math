@@ -57,8 +57,10 @@ const Log = new Schema ({
 }, {versionKey: false})
 
 
+module.exports.histories = mongoose.model('History', History)
 module.exports.users     = mongoose.model('Users', User)
 module.exports.tasks     = mongoose.model('Tasks', Task)
 module.exports.classes   = mongoose.model('Classes', Class)
 module.exports.homeworks = mongoose.model('Homeworks', Homework)
 module.exports.logs      = mongoose.model('Logs', Log)
+module.exports.attempts  = mongoose.model('Attempt', Attempt)
