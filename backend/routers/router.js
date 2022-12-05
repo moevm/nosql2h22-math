@@ -9,7 +9,7 @@ router.get('/', async (req,res) => {
 });
 
 // import database (replace existing)
-router.put("/", async (req, res) => {
+router.post("/", async (req, res) => {
 	const databaseContent = req.body.databaseContent;
 	res.send("Ok");
 });
@@ -155,7 +155,7 @@ router.get("/classes", async (req, res) => {
 });
 
 // delete a class
-router.delete("/classes/:id([0-9a-f]+)", async (req, res) => {
+router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 	const classId = req.params.id;
 	// const userId = req.session.userId;
 	// res.status(400).send("Class id is not an ObjectId hex string")
