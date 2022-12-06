@@ -3,6 +3,8 @@ const router  = express.Router();
 const ObjectId = require('mongoose').Types.ObjectId
 const schema = require('../database/schema')
 
+const taskGenerator = require('../task_generator');
+
 // export database
 router.get('/', async (req,res) => {
 	// const userId = req.session.userId;
@@ -59,11 +61,27 @@ router.get("/personal/homeworks", async (req, res) => {
 
 // get task by categories; if unsolved task exists, return it instead of creating a new task
 router.get("/task", async (req, res) => {
-	// const userId = req.session.userId;
-	const categories = req.query.categories.split("+");
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in as a pupil to proceed")
-	res.json({task: "goes here"});
+	if(!req.query.categories) {
+		res.status(400).send("Request must contain 'categories' as query parameter");
+		return;
+	}
+	const categories = req.query.categories.split(" ");
+	if(!categories.length) {
+		res.status(400).send("'categories' must not be empty");
+		return;
+	}
+	const userId = req.cookies.userId;
+	console.log(userId);
+	if(userId === undefined) {
+		// test cookie
+		// res.cookie("userId", "a", { maxAge: 20000 })
+		const task = taskGenerator(categories);
+		task.id = null;
+		task.created_timestamp = null;
+		res.json(task);
+		return;
+	}
+	res.send("not implemented")
 });
 
 // get categories from last task pupil tried to solve before
@@ -265,19 +283,19 @@ router.get("/logs", async (req, res) => {
 });
 
 // fallback
-router.get("*", (req, res) => {
+router.get("(.*)", (req, res) => {
 	res.status(404).send("No valid endpoint for that")
 });
 
-router.post("*", (req, res) => {
+router.post("(.*)", (req, res) => {
 	res.status(404).send("No valid endpoint for that")
 });
 
-router.put("*", (req, res) => {
+router.put("(.*)", (req, res) => {
 	res.status(404).send("No valid endpoint for that")
 });
 
-router.delete("*", (req, res) => {
+router.delete("(.*)", (req, res) => {
 	res.status(404).send("No valid endpoint for that")
 });
 
