@@ -1,11 +1,37 @@
+.main {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
+ol {
+    margin: 3px 0px 3px 0px;
+    text-align: justify;
+    line-height: 32px;
+}
+
+.homeworks {
+    margin-top: -40px;
+    width: 460px;
+    font-size: 28px;
+    line-height: 32px;
+}
+
+.homework {
+    margin-bottom: 20px;
+    border: 2px dashed rgba(227, 114, 34, 0.8);
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .task {
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(0, -50%);
 }
 
 

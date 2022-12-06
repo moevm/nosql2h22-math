@@ -9,7 +9,7 @@ export default function Navigation() {
     };
     
     let navigation = <></>
-    let user = ""
+    let user = "pupil"
     switch(user){
         case "pupil":
             navigation = <div className='navbar'>
