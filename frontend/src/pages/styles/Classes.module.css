@@ -1,0 +1,23 @@
+.new_class {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.title {
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 32px;
+    margin-bottom: 20px;
+}
+
+.main_button {
+    margin-top: 20px !important;
+    width: 360px;
+    height: 56px;
+    border-radius: 28px !important;
+    background: #E37222 !important;
+    font-size: 20px !important;
+    color: #FFFFFF !important;
+}
