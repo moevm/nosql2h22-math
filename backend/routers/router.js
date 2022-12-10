@@ -62,6 +62,7 @@ router.get("/personal/homeworks", async (req, res) => {
 
 // get task by categories; if unsolved task exists, return it instead of creating a new task
 router.get("/task", async (req, res) => {
+	console.log("GET /task");
 	if(!req.query.categories) {
 		res.status(400).send("Request must contain 'categories' as query parameter");
 		return;
@@ -71,21 +72,45 @@ router.get("/task", async (req, res) => {
 		res.status(400).send("'categories' must not be empty");
 		return;
 	}
-	// console.log(`GET request to /task: ${JSON.stringify(req)}`);
 	console.log(`Got cookies: ${JSON.stringify(req.cookies)}`);
 	console.log(`Got signed cookies: ${JSON.stringify(req.signedCookies)}`);
 	const userId = req.cookies.userId;
-	console.log("User id kinda sus:", userId, typeof userId);
+	console.log("User id:", userId, typeof userId);
 	if(userId === undefined) {
-		// test cookie
-		// res.cookie("userId", "a", { maxAge: 20000 })
+		console.log(`Sending a task without saving`);
 		const task = taskGenerator(categories);
 		task.id = null;
 		task.created_timestamp = null;
 		res.json(task);
 		return;
 	}
-	res.send("not implemented")
+	const user = await schema.users.findOne({_id: ObjectId(userId)});
+	console.log(`Found user: ${JSON.stringify(user)}`);
+	const taskIds = (await schema.users.findOne({'_id': userId}, {'tasks': 1})).tasks
+	console.log(`Found tasks by user: ${JSON.stringify(taskIds)}`);
+	const result = await schema.tasks.findOne({'_id': {$in: taskIds},
+		'categories': categories,
+		'attempts.status': {$in: ['in progress', 'not correct']}});
+	if(!result) {
+		console.log(`Creating a new task`);
+		const task = taskGenerator(categories);
+		console.log(`Generated task: ${JSON.stringify(task)}`);
+		const taskObject = new schema.tasks(task);
+		console.log(`Mongo task document: ${taskObject}`);
+		await taskObject.save();
+		const attemptObject = new schema.attempts({});
+		console.log(`Mongo attempt document: ${attemptObject}`);
+		await schema.tasks.updateOne({'_id': taskObject._id},
+			{$set: {"attempts": [attemptObject]}});
+		await schema.users.updateOne({"_id": ObjectId(userId)}, {
+			$set: {"tasks": taskIds.concat([taskObject._id])}
+		});
+		console.log(`Updated user tasks: ${JSON.stringify(await schema.users.findOne({_id: ObjectId(userId)}))}`);
+		res.json(task);
+		return;
+	}
+	console.log(`Found fitting pending task: ${result}`);
+	res.json(result);
 });
 
 // get categories from last task pupil tried to solve before
@@ -248,11 +273,23 @@ router.post("/login", async (req, res) => {
 		res.status(403).send("Wrong credentials");
 		return;
 	}
-	res.cookie("userId", user._id.toString(), {
+	/*res.cookie("userId", user._id.toString(), {
 		signed: false,
 		secure: false,
 		maxAge: 1000 * 600,
 		domain: "localhost:8000"
+	});*/
+	res.json({
+		status: "Ok",
+		userId: user._id.toString()
+	});
+});
+
+router.get("/remember-me", (req, res) => {
+	const userId = req.query.id;
+	res.cookie("userId", userId, {
+		signed: false,
+		secure: false
 	});
 	res.send("Ok");
 });
