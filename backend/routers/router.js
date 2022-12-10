@@ -1,7 +1,8 @@
 const express = require('express');
 const router  = express.Router();
-const ObjectId = require('mongoose').Types.ObjectId
-const schema = require('../database/schema')
+const mongoose = require('mongoose');
+const ObjectId = require('mongoose').Types.ObjectId;
+const schema = require('../database/schema');
 
 const taskGenerator = require('../task_generator');
 
@@ -70,8 +71,11 @@ router.get("/task", async (req, res) => {
 		res.status(400).send("'categories' must not be empty");
 		return;
 	}
+	// console.log(`GET request to /task: ${JSON.stringify(req)}`);
+	console.log(`Got cookies: ${JSON.stringify(req.cookies)}`);
+	console.log(`Got signed cookies: ${JSON.stringify(req.signedCookies)}`);
 	const userId = req.cookies.userId;
-	console.log(userId);
+	console.log("User id kinda sus:", userId, typeof userId);
 	if(userId === undefined) {
 		// test cookie
 		// res.cookie("userId", "a", { maxAge: 20000 })
@@ -229,8 +233,48 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
 	const email = req.body.email;
 	const password = req.body.password;
-	// res.status(403).send("Wrong credentials")
-	// res.cookie("userId", "982d5a002e458358a5df6012"); res.send("Ok");
+	console.log(`Got POST to /login with email="${email}", password="${password}"`);
+	if(!email || !password) {
+		res.status(403).send("Wrong credentials");
+		return;
+	}
+	const user = await schema.users.findOne({'email': email});
+	console.log(`Found user: ${user}`);
+	if(!user) {
+		res.status(403).send("Wrong credentials");
+		return;
+	}
+	if(user.password !== password) {
+		res.status(403).send("Wrong credentials");
+		return;
+	}
+	res.cookie("userId", user._id.toString(), {
+		signed: false,
+		secure: false,
+		maxAge: 1000 * 600,
+		domain: "localhost:8000"
+	});
+	res.send("Ok");
+});
+
+router.get("/test/users", async (req, res) => {
+	const result = await schema.users.find();
+	res.send(result);
+});
+
+router.get("/init", async (req, res) => {
+	const john = new schema.users({
+		email: "john.doe@example.com",
+		password: "password"
+	});
+	try {
+		await john.save();
+	}
+	catch (e) {
+		console.error("OMG!");
+		console.error(e);
+	}
+	console.log(await schema.users.find({}));
 });
 
 // get history by...
