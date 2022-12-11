@@ -79,8 +79,9 @@ router.get("/task", async (req, res) => {
 	if(userId === undefined) {
 		console.log(`Sending a task without saving`);
 		const task = taskGenerator(categories);
-		task.id = null;
+		task._id = null;
 		task.created_timestamp = null;
+		task.attempts = [];
 		res.json(task);
 		return;
 	}
@@ -106,7 +107,8 @@ router.get("/task", async (req, res) => {
 			$set: {"tasks": taskIds.concat([taskObject._id])}
 		});
 		console.log(`Updated user tasks: ${JSON.stringify(await schema.users.findOne({_id: ObjectId(userId)}))}`);
-		res.json(task);
+		const findUpdated = await schema.tasks.findOne({'_id': taskObject._id});
+		res.json(findUpdated);
 		return;
 	}
 	console.log(`Found fitting pending task: ${result}`);
@@ -244,13 +246,36 @@ router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 
 // register
 router.post("/register", async (req, res) => {
+	console.log("POST /register");
+	const creatableRoles = ["teacher", "pupil"];
 	const email = req.body.email;
 	const password = req.body.password;
 	const firstName = req.body.firstName;
 	const lastName = req.body.lastName;
 	const role = req.body.role; // "teacher" | "pupil"
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(409).send(`User with email '${email}' already exists`)
+	if(!(email && password && firstName && lastName)) {
+		res.status(400).send("All fields must be filled");
+		return;
+	}
+	if(creatableRoles.indexOf(role) === -1) {
+		res.status(400).send("Role is not in " + creatableRoles.toString());
+		return;
+	}
+	const userWithSameEmail = await schema.users.findOne({email: email});
+	if(userWithSameEmail) {
+		console.log(`Found user with the same email: ${userWithSameEmail}`);
+		res.status(409).send(`User with email '${email}' already exists`);
+		return;
+	}
+	const newUser = new schema.users({
+		email: email,
+		password: password,
+		first_name: firstName,
+		last_name: lastName,
+		role: role
+	});
+	await newUser.save();
+	console.log(`Created user: ${newUser}`);
 	res.status(201).send("created");
 });
 
@@ -273,12 +298,6 @@ router.post("/login", async (req, res) => {
 		res.status(403).send("Wrong credentials");
 		return;
 	}
-	/*res.cookie("userId", user._id.toString(), {
-		signed: false,
-		secure: false,
-		maxAge: 1000 * 600,
-		domain: "localhost:8000"
-	});*/
 	res.json({
 		status: "Ok",
 		userId: user._id.toString()
@@ -294,24 +313,38 @@ router.get("/remember-me", (req, res) => {
 	res.send("Ok");
 });
 
+router.get("/logout", (req, res) => {
+	console.log("GET /logout");
+	const userId = req.cookies.userId;
+	console.log(`Cookie userId: ${userId}`);
+	if(userId === undefined) {
+		res.status(401).send("Must log in first to logout");
+		return;
+	}
+	res.clearCookie("userId");
+	res.send("Ok");
+});
+
 router.get("/test/users", async (req, res) => {
 	const result = await schema.users.find();
 	res.send(result);
 });
 
-router.get("/init", async (req, res) => {
-	const john = new schema.users({
-		email: "john.doe@example.com",
-		password: "password"
+router.get("/test/init", async (req, res) => {
+	const newUser = new schema.users({
+		email: Math.floor(1000000*Math.random()).toString() + "@example.com",
+		password: Math.floor(1000000*Math.random()).toString()
 	});
+	console.log("Created debug user: ", newUser);
 	try {
-		await john.save();
+		await newUser.save();
 	}
 	catch (e) {
 		console.error("OMG!");
 		console.error(e);
 	}
-	console.log(await schema.users.find({}));
+	// console.log(await schema.users.find({}));
+	res.send("Ok");
 });
 
 // get history by...
