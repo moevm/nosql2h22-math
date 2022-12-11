@@ -109,6 +109,7 @@ router.get("/task", async (req, res) => {
 	console.log(`Got cookies: ${JSON.stringify(req.cookies)}`);
 	console.log(`Got signed cookies: ${JSON.stringify(req.signedCookies)}`);
 	const userId = req.cookies.userId;
+	const userRole = req.cookies.userRole;
 	console.log("User id:", userId, typeof userId);
 	if(userId === undefined) {
 		console.log(`Sending a task without saving`);
@@ -119,9 +120,9 @@ router.get("/task", async (req, res) => {
 		res.json(task);
 		return;
 	}
-	const user = await schema.users.findOne({_id: ObjectId(userId)});
-	console.log(`Found user: ${JSON.stringify(user)}`);
-	if(user.role !== "pupil") {
+	//const user = await schema.users.findOne({_id: ObjectId(userId)});
+	//console.log(`Found user: ${JSON.stringify(user)}`);
+	if(userRole !== "pupil") {
 		res.status(403).send("Log in as a pupil to solve tasks or log out to preview them");
 		return;
 	}
@@ -338,13 +339,18 @@ router.post("/login", async (req, res) => {
 	}
 	res.json({
 		status: "Ok",
-		userId: user._id.toString()
+		userId: user._id.toString(),
+		userRole: user.role
 	});
 });
 
 router.get("/remember-me", (req, res) => {
 	const userId = req.query.id;
 	res.cookie("userId", userId, {
+		signed: false,
+		secure: false
+	});
+	res.cookie("userRole", req.query.role, {
 		signed: false,
 		secure: false
 	});
