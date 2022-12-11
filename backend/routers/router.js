@@ -25,15 +25,49 @@ router.post("/", async (req, res) => {
 
 // submit attempt, return verdict (ok/not ok)
 router.post("/submit", async (req, res) => {
-	const taskId = req.body.taskId;
-	// const userId = req.session.userId;
-	const answer = req.body.answer;
-	const startTime = req.body.startTime;
-	const endTime = req.body.endTime;
-	// res.status(400).send("taskId is not ObjectId hex string")
-	// res.status(403).send("Task belongs to a different user")
-	res.send("correct")
-	// res.send("not correct")
+	console.log("POST /submit");
+	const userId = req.cookies.userId;
+	if(userId === undefined) {
+		console.log(`User is not logged in. Expecting task to be in request body`);
+		const answer = Number.parseInt(req.body.answer);
+		const task = req.body.task;
+		const correctAnswer = Number.parseInt(task.correctAnswer);
+		console.log(`Answer is ${answer}; correct answer is ${correctAnswer}`);
+		res.json({verdict: answer === correctAnswer ? "correct" : "not correct"});
+		return;
+	}
+	console.log(`User is logged in`);
+	const user = schema.users.find({_id: ObjectId(userId)});
+	if(!user) {
+		res.status(400).send(`User with id=${userId} not found`);
+		return;
+	}
+	const taskId = ObjectId(req.body.taskId);
+	const answer = Number.parseInt(req.body.answer);
+	// const startTime = Number.parseInt(req.body.startTime);
+	// const endTime = Number.parseInt(req.body.endTime);
+	const correctAnswer = (await schema.tasks.findOne({'_id': taskId},
+		{'_id': 0, 'correct_answer': 1})).correct_answer;
+	console.log(`Answer is ${answer}; correct answer is ${correctAnswer}`);
+	const status = answer === correctAnswer ? 'correct' : 'not correct';
+	console.log(`Solution status is "${status}"`);
+	await schema.tasks.updateOne({'_id': taskId},
+		{$set: {"attempts.$[attempt].end_timestamp": Date.now(),
+				"attempts.$[attempt].status": status,
+				"attempts.$[attempt].user_answer": answer}},
+		{"arrayFilters": [{"attempt.status": 'in progress'}]})
+	if(status === 'not correct') {
+		await schema.tasks.updateOne({'_id': taskId},
+			{
+				$push: {
+					"attempts": {
+						'start_timestamp': Date.now(),
+						'status': 'in progress'
+					}
+				}
+			});
+	}
+	res.json({verdict: status});
 });
 
 // get all active homeworks and their progress for pupil
@@ -67,7 +101,7 @@ router.get("/task", async (req, res) => {
 		res.status(400).send("Request must contain 'categories' as query parameter");
 		return;
 	}
-	const categories = req.query.categories.split(" ");
+	const categories = req.query.categories.split(" ").sort();
 	if(!categories.length) {
 		res.status(400).send("'categories' must not be empty");
 		return;
@@ -87,11 +121,15 @@ router.get("/task", async (req, res) => {
 	}
 	const user = await schema.users.findOne({_id: ObjectId(userId)});
 	console.log(`Found user: ${JSON.stringify(user)}`);
+	if(user.role !== "pupil") {
+		res.status(403).send("Log in as a pupil to solve tasks or log out to preview them");
+		return;
+	}
 	const taskIds = (await schema.users.findOne({'_id': userId}, {'tasks': 1})).tasks
 	console.log(`Found tasks by user: ${JSON.stringify(taskIds)}`);
 	const result = await schema.tasks.findOne({'_id': {$in: taskIds},
 		'categories': categories,
-		'attempts.status': {$in: ['in progress', 'not correct']}});
+		'attempts.status': 'in progress'});
 	if(!result) {
 		console.log(`Creating a new task`);
 		const task = taskGenerator(categories);
@@ -311,6 +349,16 @@ router.get("/remember-me", (req, res) => {
 		secure: false
 	});
 	res.send("Ok");
+});
+
+router.get("/whoami", async (req, res) => {
+	const userId = req.cookies.userId;
+	if(userId === undefined) {
+		res.json(null);
+		return;
+	}
+	const user = await schema.users.find({_id: ObjectId(userId)});
+	res.json(user);
 });
 
 router.get("/logout", (req, res) => {
