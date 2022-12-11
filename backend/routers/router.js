@@ -1,7 +1,10 @@
 const express = require('express');
 const router  = express.Router();
-const ObjectId = require('mongoose').Types.ObjectId
-const schema = require('../database/schema')
+const mongoose = require('mongoose');
+const ObjectId = require('mongoose').Types.ObjectId;
+const schema = require('../database/schema');
+
+const taskGenerator = require('../task_generator');
 
 // export database
 router.get('/', async (req,res) => {
@@ -22,15 +25,49 @@ router.post("/", async (req, res) => {
 
 // submit attempt, return verdict (ok/not ok)
 router.post("/submit", async (req, res) => {
-	const taskId = req.body.taskId;
-	// const userId = req.session.userId;
-	const answer = req.body.answer;
-	const startTime = req.body.startTime;
-	const endTime = req.body.endTime;
-	// res.status(400).send("taskId is not ObjectId hex string")
-	// res.status(403).send("Task belongs to a different user")
-	res.send("correct")
-	// res.send("not correct")
+	console.log("POST /submit");
+	const userId = req.cookies.userId;
+	if(userId === undefined) {
+		console.log(`User is not logged in. Expecting task to be in request body`);
+		const answer = Number.parseInt(req.body.answer);
+		const task = req.body.task;
+		const correctAnswer = Number.parseInt(task.correctAnswer);
+		console.log(`Answer is ${answer}; correct answer is ${correctAnswer}`);
+		res.json({verdict: answer === correctAnswer ? "correct" : "not correct"});
+		return;
+	}
+	console.log(`User is logged in`);
+	const user = schema.users.find({_id: ObjectId(userId)});
+	if(!user) {
+		res.status(400).send(`User with id=${userId} not found`);
+		return;
+	}
+	const taskId = ObjectId(req.body.taskId);
+	const answer = Number.parseInt(req.body.answer);
+	// const startTime = Number.parseInt(req.body.startTime);
+	// const endTime = Number.parseInt(req.body.endTime);
+	const correctAnswer = (await schema.tasks.findOne({'_id': taskId},
+		{'_id': 0, 'correct_answer': 1})).correct_answer;
+	console.log(`Answer is ${answer}; correct answer is ${correctAnswer}`);
+	const status = answer === correctAnswer ? 'correct' : 'not correct';
+	console.log(`Solution status is "${status}"`);
+	await schema.tasks.updateOne({'_id': taskId},
+		{$set: {"attempts.$[attempt].end_timestamp": Date.now(),
+				"attempts.$[attempt].status": status,
+				"attempts.$[attempt].user_answer": answer}},
+		{"arrayFilters": [{"attempt.status": 'in progress'}]})
+	if(status === 'not correct') {
+		await schema.tasks.updateOne({'_id': taskId},
+			{
+				$push: {
+					"attempts": {
+						'start_timestamp': Date.now(),
+						'status': 'in progress'
+					}
+				}
+			});
+	}
+	res.json({verdict: status});
 });
 
 // get all active homeworks and their progress for pupil
@@ -59,11 +96,62 @@ router.get("/personal/homeworks", async (req, res) => {
 
 // get task by categories; if unsolved task exists, return it instead of creating a new task
 router.get("/task", async (req, res) => {
-	// const userId = req.session.userId;
-	const categories = req.query.categories.split("+");
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in as a pupil to proceed")
-	res.json({task: "goes here"});
+	console.log("GET /task");
+	if(!req.query.categories) {
+		res.status(400).send("Request must contain 'categories' as query parameter");
+		return;
+	}
+	const categories = req.query.categories.split(" ").sort();
+	if(!categories.length) {
+		res.status(400).send("'categories' must not be empty");
+		return;
+	}
+	console.log(`Got cookies: ${JSON.stringify(req.cookies)}`);
+	console.log(`Got signed cookies: ${JSON.stringify(req.signedCookies)}`);
+	const userId = req.cookies.userId;
+	const userRole = req.cookies.userRole;
+	console.log("User id:", userId, typeof userId);
+	if(userId === undefined) {
+		console.log(`Sending a task without saving`);
+		const task = taskGenerator(categories);
+		task._id = null;
+		task.created_timestamp = null;
+		task.attempts = [];
+		res.json(task);
+		return;
+	}
+	//const user = await schema.users.findOne({_id: ObjectId(userId)});
+	//console.log(`Found user: ${JSON.stringify(user)}`);
+	if(userRole !== "pupil") {
+		res.status(403).send("Log in as a pupil to solve tasks or log out to preview them");
+		return;
+	}
+	const taskIds = (await schema.users.findOne({'_id': userId}, {'tasks': 1})).tasks
+	console.log(`Found tasks by user: ${JSON.stringify(taskIds)}`);
+	const result = await schema.tasks.findOne({'_id': {$in: taskIds},
+		'categories': categories,
+		'attempts.status': 'in progress'});
+	if(!result) {
+		console.log(`Creating a new task`);
+		const task = taskGenerator(categories);
+		console.log(`Generated task: ${JSON.stringify(task)}`);
+		const taskObject = new schema.tasks(task);
+		console.log(`Mongo task document: ${taskObject}`);
+		await taskObject.save();
+		const attemptObject = new schema.attempts({});
+		console.log(`Mongo attempt document: ${attemptObject}`);
+		await schema.tasks.updateOne({'_id': taskObject._id},
+			{$set: {"attempts": [attemptObject]}});
+		await schema.users.updateOne({"_id": ObjectId(userId)}, {
+			$set: {"tasks": taskIds.concat([taskObject._id])}
+		});
+		console.log(`Updated user tasks: ${JSON.stringify(await schema.users.findOne({_id: ObjectId(userId)}))}`);
+		const findUpdated = await schema.tasks.findOne({'_id': taskObject._id});
+		res.json(findUpdated);
+		return;
+	}
+	console.log(`Found fitting pending task: ${result}`);
+	res.json(result);
 });
 
 // get categories from last task pupil tried to solve before
@@ -197,13 +285,36 @@ router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 
 // register
 router.post("/register", async (req, res) => {
+	console.log("POST /register");
+	const creatableRoles = ["teacher", "pupil"];
 	const email = req.body.email;
 	const password = req.body.password;
 	const firstName = req.body.firstName;
 	const lastName = req.body.lastName;
 	const role = req.body.role; // "teacher" | "pupil"
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(409).send(`User with email '${email}' already exists`)
+	if(!(email && password && firstName && lastName)) {
+		res.status(400).send("All fields must be filled");
+		return;
+	}
+	if(creatableRoles.indexOf(role) === -1) {
+		res.status(400).send("Role is not in " + creatableRoles.toString());
+		return;
+	}
+	const userWithSameEmail = await schema.users.findOne({email: email});
+	if(userWithSameEmail) {
+		console.log(`Found user with the same email: ${userWithSameEmail}`);
+		res.status(409).send(`User with email '${email}' already exists`);
+		return;
+	}
+	const newUser = new schema.users({
+		email: email,
+		password: password,
+		first_name: firstName,
+		last_name: lastName,
+		role: role
+	});
+	await newUser.save();
+	console.log(`Created user: ${newUser}`);
 	res.status(201).send("created");
 });
 
@@ -211,8 +322,83 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
 	const email = req.body.email;
 	const password = req.body.password;
-	// res.status(403).send("Wrong credentials")
-	// res.cookie("userId", "982d5a002e458358a5df6012"); res.send("Ok");
+	console.log(`Got POST to /login with email="${email}", password="${password}"`);
+	if(!email || !password) {
+		res.status(403).send("Wrong credentials");
+		return;
+	}
+	const user = await schema.users.findOne({'email': email});
+	console.log(`Found user: ${user}`);
+	if(!user) {
+		res.status(403).send("Wrong credentials");
+		return;
+	}
+	if(user.password !== password) {
+		res.status(403).send("Wrong credentials");
+		return;
+	}
+	res.json({
+		status: "Ok",
+		userId: user._id.toString(),
+		userRole: user.role
+	});
+});
+
+router.get("/remember-me", (req, res) => {
+	const userId = req.query.id;
+	res.cookie("userId", userId, {
+		signed: false,
+		secure: false
+	});
+	res.cookie("userRole", req.query.role, {
+		signed: false,
+		secure: false
+	});
+	res.send("Ok");
+});
+
+router.get("/whoami", async (req, res) => {
+	const userId = req.cookies.userId;
+	if(userId === undefined) {
+		res.json(null);
+		return;
+	}
+	const user = await schema.users.find({_id: ObjectId(userId)});
+	res.json(user);
+});
+
+router.get("/logout", (req, res) => {
+	console.log("GET /logout");
+	const userId = req.cookies.userId;
+	console.log(`Cookie userId: ${userId}`);
+	if(userId === undefined) {
+		res.status(401).send("Must log in first to logout");
+		return;
+	}
+	res.clearCookie("userId");
+	res.send("Ok");
+});
+
+router.get("/test/users", async (req, res) => {
+	const result = await schema.users.find();
+	res.send(result);
+});
+
+router.get("/test/init", async (req, res) => {
+	const newUser = new schema.users({
+		email: Math.floor(1000000*Math.random()).toString() + "@example.com",
+		password: Math.floor(1000000*Math.random()).toString()
+	});
+	console.log("Created debug user: ", newUser);
+	try {
+		await newUser.save();
+	}
+	catch (e) {
+		console.error("OMG!");
+		console.error(e);
+	}
+	// console.log(await schema.users.find({}));
+	res.send("Ok");
 });
 
 // get history by...
@@ -265,19 +451,19 @@ router.get("/logs", async (req, res) => {
 });
 
 // fallback
-router.get("*", (req, res) => {
+router.get("(.*)", (req, res) => {
 	res.status(404).send("No valid endpoint for that")
 });
 
-router.post("*", (req, res) => {
+router.post("(.*)", (req, res) => {
 	res.status(404).send("No valid endpoint for that")
 });
 
-router.put("*", (req, res) => {
+router.put("(.*)", (req, res) => {
 	res.status(404).send("No valid endpoint for that")
 });
 
-router.delete("*", (req, res) => {
+router.delete("(.*)", (req, res) => {
 	res.status(404).send("No valid endpoint for that")
 });
 

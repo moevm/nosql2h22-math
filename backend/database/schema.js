@@ -6,7 +6,7 @@ const Attempt = new Schema ({
     start_timestamp: {type: Date, default: Date.now},
     end_timestamp  : {type: Date},
     user_answer    : {type: Number},
-    status         : {type: String}
+    status         : {type: String, default: "in progress"}
 }, {_id: false, versionKey: false})
 
 const Task = new Schema ({

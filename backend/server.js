@@ -2,15 +2,18 @@ const port       = 8000;
 const express    = require("express");
 const app        = express();
 const bodyParser = require('body-parser');
-const students   = require("./routers/students");
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+const routes = require("./routers/router");
 const mongoose   = require('mongoose');
-const schema     = require('./database/schema'); 
+const schema     = require('./database/schema');
+const {users} = require("./database/schema");
+const cors = require("cors");
 
 
 mongoose.connect('mongodb://mongo:27017/test', {})
 //mongoose.connect('mongodb://127.0.0.1:27017/test', {})
 const db = mongoose.connection
-
 
 db.on('error', err => {
   console.log('error', err)
@@ -20,12 +23,17 @@ db.once('open', () => {
   console.log('we are connected')
 })
 
-
-
+const corsOptions = {
+  credentials: true,
+  origin: true,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE"
+}
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(cookieParser("secret00"));
+app.use(session({secret: "secret00"}));
+app.use(cors(corsOptions));
 
 // Add headers before the routes are defined
 app.use(function (req, res, next) {
@@ -41,18 +49,18 @@ app.use(function (req, res, next) {
 
     // Set to true if you need the website to include cookies in the requests sent
     // to the API (e.g. in case you use sessions)
-    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    res.setHeader('Content-Security-Policy', "default-src 'self'")
   
     // Pass to next layer of middleware
     next();
 });
 
-
-app.use("/students", students);
+app.use("/", routes);
 
 
 /*
-
 This post is a just simple method for test the db request
 curl -X POST http://localhost:8000/test
 result:
@@ -120,10 +128,6 @@ app.post('/test',  async function (req, res) {
   res.send(x)
 
 });
-app.get('/',  async function (req, res) {
-res.send("hI")
-});
-
 
 app.listen(port, function () {
     console.log('API app started');
