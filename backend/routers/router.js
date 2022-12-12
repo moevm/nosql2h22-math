@@ -365,7 +365,7 @@ router.get("/whoami", async (req, res) => {
 		res.json(null);
 		return;
 	}
-	const user = await schema.users.find({_id: ObjectId(userId)});
+	const user = await schema.users.findOne({_id: ObjectId(userId)});
 	res.json(user);
 });
 
