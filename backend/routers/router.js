@@ -348,11 +348,13 @@ router.get("/remember-me", (req, res) => {
 	const userId = req.query.id;
 	res.cookie("userId", userId, {
 		signed: false,
-		secure: false
+		secure: true,
+		sameSite: 'strict'
 	});
 	res.cookie("userRole", req.query.role, {
 		signed: false,
-		secure: false
+		secure: true,
+		sameSite: 'strict'
 	});
 	res.send("Ok");
 });
