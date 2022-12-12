@@ -11,8 +11,8 @@ const {users} = require("./database/schema");
 const cors = require("cors");
 
 
-//mongoose.connect('mongodb://mongo:27017/test', {})
-mongoose.connect('mongodb://127.0.0.1:27017/test', {})
+mongoose.connect('mongodb://mongo:27017/test', {})
+//mongoose.connect('mongodb://127.0.0.1:27017/test', {})
 const db = mongoose.connection
 
 db.on('error', err => {
