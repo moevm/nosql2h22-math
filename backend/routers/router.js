@@ -348,11 +348,13 @@ router.get("/remember-me", (req, res) => {
 	const userId = req.query.id;
 	res.cookie("userId", userId, {
 		signed: false,
-		secure: false
+		secure: true,
+		sameSite: 'strict'
 	});
 	res.cookie("userRole", req.query.role, {
 		signed: false,
-		secure: false
+		secure: true,
+		sameSite: 'strict'
 	});
 	res.send("Ok");
 });
@@ -363,7 +365,7 @@ router.get("/whoami", async (req, res) => {
 		res.json(null);
 		return;
 	}
-	const user = await schema.users.find({_id: ObjectId(userId)});
+	const user = await schema.users.findOne({_id: ObjectId(userId)});
 	res.json(user);
 });
 
