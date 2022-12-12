@@ -11,8 +11,8 @@ const {users} = require("./database/schema");
 const cors = require("cors");
 
 
-mongoose.connect('mongodb://mongo:27017/test', {})
-//mongoose.connect('mongodb://127.0.0.1:27017/test', {})
+//mongoose.connect('mongodb://mongo:27017/test', {})
+mongoose.connect('mongodb://127.0.0.1:27017/test', {})
 const db = mongoose.connection
 
 db.on('error', err => {
@@ -34,6 +34,28 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser("secret00"));
 app.use(session({secret: "secret00"}));
 app.use(cors(corsOptions));
+
+// Add headers before the routes are defined
+/*app.use(function (req, res, next) {
+
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+
+    // Request methods you wish to allow
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    res.setHeader('Content-Security-Policy', "default-src 'self'")
+  
+    // Pass to next layer of middleware
+    next();
+}); */
 
 app.use("/", routes);
 

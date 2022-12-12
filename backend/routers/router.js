@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
 	// const userId = req.session.userId;
 	// res.status(401).send("Log in to proceed")
 	// res.status(403).send("User must be an administrator to reset data")
-	res.send("Ok");
+	res.json({message: "Ok"});
 });
 
 // submit attempt, return verdict (ok/not ok)
@@ -39,7 +39,7 @@ router.post("/submit", async (req, res) => {
 	console.log(`User is logged in`);
 	const user = schema.users.find({_id: ObjectId(userId)});
 	if(!user) {
-		res.status(400).send(`User with id=${userId} not found`);
+		res.json({status: 400, message: `User with id=${userId} not found`});
 		return;
 	}
 	const taskId = ObjectId(req.body.taskId);
@@ -98,12 +98,12 @@ router.get("/personal/homeworks", async (req, res) => {
 router.get("/task", async (req, res) => {
 	console.log("GET /task");
 	if(!req.query.categories) {
-		res.status(400).send("Request must contain 'categories' as query parameter");
+		res.json({status: 400, message: "Request must contain 'categories' as query parameter"});
 		return;
 	}
 	const categories = req.query.categories.split(" ").sort();
 	if(!categories.length) {
-		res.status(400).send("'categories' must not be empty");
+		res.json({status: 400, message: "'categories' must not be empty"});
 		return;
 	}
 	console.log(`Got cookies: ${JSON.stringify(req.cookies)}`);
@@ -123,7 +123,7 @@ router.get("/task", async (req, res) => {
 	//const user = await schema.users.findOne({_id: ObjectId(userId)});
 	//console.log(`Found user: ${JSON.stringify(user)}`);
 	if(userRole !== "pupil") {
-		res.status(403).send("Log in as a pupil to solve tasks or log out to preview them");
+		res.json({status: 403, message: "Log in as a pupil to solve tasks or log out to preview them"});
 		return;
 	}
 	const taskIds = (await schema.users.findOne({'_id': userId}, {'tasks': 1})).tasks
@@ -207,7 +207,7 @@ router.post("/classes/homeworks", async (req, res) => {
 	// const userId = req.session.userId;
 	// res.status(400).send(`${something} is not ${some_type}`)
 	// res.status(401).send("Log in as a teacher to proceed")
-	res.status(201).send("Created");
+	res.json({status: 201, message: "Created"});
 });
 
 // add a class
@@ -216,7 +216,7 @@ router.post("/classes", async (req, res) => {
 	// res.status(400).send(`${something} is not ${some_type}`)
 	// res.status(401).send("Log in as a teacher to proceed")
 	// res.status(409).send(`Class named "${className}" already exists`)
-	res.status(201).json({classId: "goes here"});
+	res.json({status: 201, classId: "goes here"});
 });
 
 // join to class as a pupil
@@ -225,7 +225,7 @@ router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 	// const userId = req.session.userId;
 	// res.status(401).send("Log in as a pupil to proceed")
 	// res.status(409).send("Pupil already present in a class")
-	res.send("Ok");
+	res.json({message: "Ok"});
 });
 
 // get statistics for all students in a class (Class Page)
@@ -233,7 +233,7 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 	const classId = req.params.id;
 	// const userId = req.session.userId;
 	// res.status(401).send("Log in as a teacher to proceed")
-	res.json({stats: "go here"})
+	res.json({stats: "go here"});
 	/*[
 	{
 		firstName: "Fedor",
@@ -280,7 +280,7 @@ router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 	// res.status(401).send("Log in as a teacher to proceed")
 	// res.status(403).send("Teacher must run a class to delete it")
 	// res.status(404).send("Class not found")
-	res.json("Ok");
+	res.json({message: "Ok"});
 });
 
 // register
@@ -293,17 +293,17 @@ router.post("/register", async (req, res) => {
 	const lastName = req.body.lastName;
 	const role = req.body.role; // "teacher" | "pupil"
 	if(!(email && password && firstName && lastName)) {
-		res.status(400).send("All fields must be filled");
+		res.json({status: 401, message: "All fields must be filled"});
 		return;
 	}
 	if(creatableRoles.indexOf(role) === -1) {
-		res.status(400).send("Role is not in " + creatableRoles.toString());
+		res.json({status: 400, message: "Role is not in " + creatableRoles.toString()});
 		return;
 	}
 	const userWithSameEmail = await schema.users.findOne({email: email});
 	if(userWithSameEmail) {
 		console.log(`Found user with the same email: ${userWithSameEmail}`);
-		res.status(409).send(`User with email '${email}' already exists`);
+		res.json({status: 409, message: `User with email '${email}' already exists`});
 		return;
 	}
 	const newUser = new schema.users({
@@ -315,7 +315,7 @@ router.post("/register", async (req, res) => {
 	});
 	await newUser.save();
 	console.log(`Created user: ${newUser}`);
-	res.status(201).send("created");
+	res.json({status: 201, message: "created"});
 });
 
 // log in
@@ -324,21 +324,21 @@ router.post("/login", async (req, res) => {
 	const password = req.body.password;
 	console.log(`Got POST to /login with email="${email}", password="${password}"`);
 	if(!email || !password) {
-		res.status(403).send("Wrong credentials");
+		res.json({status: 403, message: "Wrong credentials"});
 		return;
 	}
 	const user = await schema.users.findOne({'email': email});
 	console.log(`Found user: ${user}`);
 	if(!user) {
-		res.status(403).send("Wrong credentials");
+		res.json({status: 403, message: "Wrong credentials"});
 		return;
 	}
 	if(user.password !== password) {
-		res.status(403).send("Wrong credentials");
+		res.json({status: 403, message: "Wrong credentials"});
 		return;
 	}
 	res.json({
-		status: "Ok",
+		message: "Ok",
 		userId: user._id.toString(),
 		userRole: user.role
 	});
@@ -356,7 +356,7 @@ router.get("/remember-me", (req, res) => {
 		secure: true,
 		sameSite: 'strict'
 	});
-	res.send("Ok");
+	res.json({message: "Ok"});
 });
 
 router.get("/whoami", async (req, res) => {
@@ -374,16 +374,16 @@ router.get("/logout", (req, res) => {
 	const userId = req.cookies.userId;
 	console.log(`Cookie userId: ${userId}`);
 	if(userId === undefined) {
-		res.status(401).send("Must log in first to logout");
+		res.json({status: 401, message: "Must log in first to logout"});
 		return;
 	}
 	res.clearCookie("userId");
-	res.send("Ok");
+	res.json({message: "Ok"});
 });
 
 router.get("/test/users", async (req, res) => {
 	const result = await schema.users.find();
-	res.send(result);
+	res.json(result);
 });
 
 router.get("/test/init", async (req, res) => {
@@ -400,7 +400,7 @@ router.get("/test/init", async (req, res) => {
 		console.error(e);
 	}
 	// console.log(await schema.users.find({}));
-	res.send("Ok");
+	res.json({message: "Ok"});
 });
 
 // get history by...
@@ -454,19 +454,19 @@ router.get("/logs", async (req, res) => {
 
 // fallback
 router.get("(.*)", (req, res) => {
-	res.status(404).send("No valid endpoint for that")
+	res.json({status: 404, message: "No valid endpoint for that"});
 });
 
 router.post("(.*)", (req, res) => {
-	res.status(404).send("No valid endpoint for that")
+	res.json({status: 404, message: "No valid endpoint for that"});
 });
 
 router.put("(.*)", (req, res) => {
-	res.status(404).send("No valid endpoint for that")
+	res.json({status: 404, message: "No valid endpoint for that"});
 });
 
 router.delete("(.*)", (req, res) => {
-	res.status(404).send("No valid endpoint for that")
+	res.json({status: 404, message: "No valid endpoint for that"});
 });
 
 module.exports = router;
