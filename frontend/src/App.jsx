@@ -1,3 +1,4 @@
+import {useState} from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Task from './pages/components/Task.jsx'
 import Register from './pages/components/Register.jsx'
@@ -12,12 +13,13 @@ import Logs from './pages/components/Logs.jsx'
 import History from './pages/components/History.jsx'
 
 function App() {
+    const [navTrigger, setNavTrigger] = useState(false)
     return (
         <BrowserRouter>
-            <Navigation />
+            <Navigation navTrigger={navTrigger} setNavTrigger={setNavTrigger}/>
             <Routes>
-                <Route path='/login' element={<Login />} />
-                <Route path='/register' element={<Register />} />
+                <Route path='/login' element={<Login navTrigger={navTrigger} setNavTrigger={setNavTrigger}/>} />
+                <Route path='/register' element={<Register navTrigger={navTrigger} setNavTrigger={setNavTrigger}/>} />
 
                 <Route path='/' element={<Task />} />
                 <Route path='/stats' element={<Stats />} />
