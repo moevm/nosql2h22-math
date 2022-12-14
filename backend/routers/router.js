@@ -175,28 +175,24 @@ router.get("/personal/attempts",
 		// res.status(400).send(`${something} is not ${some_type}`)
 		// res.status(401).send("Log in to proceed")
 		// res.status(403).send("Requested pupil is not in any of this teacher's classes")
-		res.json({
-			attempts: [
-				{
-					datetime: "2022-11-15T06:31:15.000Z",
-					taskContent: "16x3-17",
-					categories: ["subtraction", "multiplication"],
-					solvingTime: "1970-01-01T00:01:02.000Z",
-					answer: 42,
-					verdict: false
-				},
-				{
-					datetime: "2022-11-15T09:25:00.000Z",
-					taskContent: "82-65-11",
-					categories: ["subtraction"],
-					solvingTime: "1970-01-01T00:00:42.000Z",
-					answer: 6,
-					verdict: true
-				}
-			],
-			correct: 1,
-			wrong: 1
-		});
+		res.json([
+			{
+				datetime: "2022-11-15T06:31:15.000Z",
+				taskContent: "16x3-17",
+				categories: ["subtraction", "multiplication"],
+				solvingTime: "1970-01-01T00:01:02.000Z",
+				answer: 42,
+				verdict: false
+			},
+			{
+				datetime: "2022-11-15T09:25:00.000Z",
+				taskContent: "82-65-11",
+				categories: ["subtraction"],
+				solvingTime: "1970-01-01T00:00:42.000Z",
+				answer: 6,
+				verdict: true
+			}
+		]);
 	});
 
 // publish new homework
@@ -358,6 +354,40 @@ router.get("/remember-me", (req, res) => {
 	});
 	res.json({message: "Ok"});
 });
+
+router.get("/access-to-user", async (req, res) => {
+	const requestedId = req.query.requested;
+	const requesterRole = req.cookies.userRole;
+	if (!requestedId){
+		res.json({status: 401, message: "Not enough information"});
+		return;
+	}
+	if (requestedId.length != 24){
+		res.json({status: 401, message: "Non-supportable id format"});
+		return;
+	}
+	const requestedUser = await schema.users.findOne({_id: ObjectId(requestedId)});
+	if (!requestedUser){
+		res.json({status: 400, message: `User with id=${requestedId} not found`});
+	}
+	if (requesterRole === "administrator"){
+		res.json({
+			status: 200,
+			user: requestedUser,
+			requesterRole: req.cookies.userRole
+		});
+		return;
+	}
+	const requestedUserRole = requestedUser.role;
+	if ((requesterRole === "pupil") || (requestedUserRole !== "pupil")){
+		res.json({status: 403, message: "Access denied"})
+	}
+	res.json({
+		status: 200,
+		user: requestedUser,
+		requesterRole: req.cookies.userRole
+	});
+})
 
 router.get("/whoami", async (req, res) => {
 	const userId = req.cookies.userId;
