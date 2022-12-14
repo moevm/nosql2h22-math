@@ -5,6 +5,8 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const schema = require('../database/schema');
 
 const taskGenerator = require('../task_generator');
+const pushLog = require('../push_log').pushLog;
+const LOG_LEVEL = require('../push_log').LOG_LEVEL;
 
 // export database
 router.get('/', async (req,res) => {
@@ -26,6 +28,8 @@ router.post("/", async (req, res) => {
 // submit attempt, return verdict (ok/not ok)
 router.post("/submit", async (req, res) => {
 	console.log("POST /submit");
+	await pushLog(LOG_LEVEL.debug, `POST /submit with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`body: ${JSON.stringify(req.body)}, query: ${JSON.stringify(req.query)}`);
 	const userId = req.cookies.userId;
 	if(userId === undefined) {
 		console.log(`User is not logged in. Expecting task to be in request body`);
@@ -97,60 +101,69 @@ router.get("/personal/homeworks", async (req, res) => {
 // get task by categories; if unsolved task exists, return it instead of creating a new task
 router.get("/task", async (req, res) => {
 	console.log("GET /task");
+	await pushLog(LOG_LEVEL.debug,
+		`'GET /task' with query: ${JSON.stringify(req.query)}, cookies: ${JSON.stringify(req.cookies)}`);
 	if(!req.query.categories) {
+		await pushLog(LOG_LEVEL.warning,
+			`GET /task: req.query.categories evaluated to false. This should never happen in a finished app ` +
+			`if request came from frontend`);
 		res.json({status: 400, message: "Request must contain 'categories' as query parameter"});
 		return;
 	}
 	const categories = req.query.categories.split(" ").sort();
-	if(!categories.length) {
-		res.json({status: 400, message: "'categories' must not be empty"});
-		return;
-	}
+	await pushLog(LOG_LEVEL.finest, `GET /task: categories=${categories}`);
 	console.log(`Got cookies: ${JSON.stringify(req.cookies)}`);
-	console.log(`Got signed cookies: ${JSON.stringify(req.signedCookies)}`);
 	const userId = req.cookies.userId;
 	const userRole = req.cookies.userRole;
 	console.log("User id:", userId, typeof userId);
+	await pushLog(LOG_LEVEL.finest, `GET /task for user id=${userId}`);
 	if(userId === undefined) {
 		console.log(`Sending a task without saving`);
+		await pushLog(LOG_LEVEL.debug, `GET /task: User not authenticated. ` +
+			`Sending a task without saving`);
 		const task = taskGenerator(categories);
+		await pushLog(LOG_LEVEL.finest, `GET /task: Generated task: ${JSON.stringify(task)}`);
 		task._id = null;
 		task.created_timestamp = null;
 		task.attempts = [];
 		res.json(task);
 		return;
 	}
-	//const user = await schema.users.findOne({_id: ObjectId(userId)});
-	//console.log(`Found user: ${JSON.stringify(user)}`);
 	if(userRole !== "pupil") {
+		await pushLog(LOG_LEVEL.warning, `GET /task: User is logged in, but not a pupil. Refusing.`);
 		res.json({status: 403, message: "Log in as a pupil to solve tasks or log out to preview them"});
 		return;
 	}
 	const taskIds = (await schema.users.findOne({'_id': userId}, {'tasks': 1})).tasks
 	console.log(`Found tasks by user: ${JSON.stringify(taskIds)}`);
+	await pushLog(LOG_LEVEL.finest, `GET /task: Found tasks by user: ${JSON.stringify(taskIds)}`);
 	const result = await schema.tasks.findOne({'_id': {$in: taskIds},
 		'categories': categories,
 		'attempts.status': 'in progress'});
 	if(!result) {
 		console.log(`Creating a new task`);
+		await pushLog(LOG_LEVEL.finest, `GET /task: Unfinished task for given categories not found. Generating a new one`);
 		const task = taskGenerator(categories);
 		console.log(`Generated task: ${JSON.stringify(task)}`);
+		await pushLog(LOG_LEVEL.finest, `GET /task: Generated task: ${JSON.stringify(task)}`);
 		const taskObject = new schema.tasks(task);
 		console.log(`Mongo task document: ${taskObject}`);
 		await taskObject.save();
 		const attemptObject = new schema.attempts({});
 		console.log(`Mongo attempt document: ${attemptObject}`);
+		await pushLog(LOG_LEVEL.finest, `GET /task: Mongo attempt document: ${JSON.stringify(attemptObject)}`);
 		await schema.tasks.updateOne({'_id': taskObject._id},
 			{$set: {"attempts": [attemptObject]}});
 		await schema.users.updateOne({"_id": ObjectId(userId)}, {
 			$set: {"tasks": taskIds.concat([taskObject._id])}
 		});
-		console.log(`Updated user tasks: ${JSON.stringify(await schema.users.findOne({_id: ObjectId(userId)}))}`);
 		const findUpdated = await schema.tasks.findOne({'_id': taskObject._id});
+		await pushLog(LOG_LEVEL.finest, `GET /task: Updated task: ${findUpdated}`);
 		res.json(findUpdated);
 		return;
 	}
 	console.log(`Found fitting pending task: ${result}`);
+	await pushLog(LOG_LEVEL.debug, `Found fitting pending task: ${result}`);
 	res.json(result);
 });
 
@@ -286,6 +299,8 @@ router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 // register
 router.post("/register", async (req, res) => {
 	console.log("POST /register");
+	await pushLog(LOG_LEVEL.debug, `POST /register with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`body: ${JSON.stringify(req.body)}, query: ${JSON.stringify(req.query)}`);
 	const creatableRoles = ["teacher", "pupil"];
 	const email = req.body.email;
 	const password = req.body.password;
@@ -303,6 +318,8 @@ router.post("/register", async (req, res) => {
 	const userWithSameEmail = await schema.users.findOne({email: email});
 	if(userWithSameEmail) {
 		console.log(`Found user with the same email: ${userWithSameEmail}`);
+		await pushLog(LOG_LEVEL.warning, `POST /register: `+
+			`Found user with the same email: ${userWithSameEmail}. Exiting`);
 		res.json({status: 409, message: `User with email '${email}' already exists`});
 		return;
 	}
@@ -315,6 +332,7 @@ router.post("/register", async (req, res) => {
 	});
 	await newUser.save();
 	console.log(`Created user: ${newUser}`);
+	await pushLog(LOG_LEVEL.debug, `Created user: ${newUser}`)
 	res.json({status: 201, message: "created"});
 });
 
@@ -323,6 +341,8 @@ router.post("/login", async (req, res) => {
 	const email = req.body.email;
 	const password = req.body.password;
 	console.log(`Got POST to /login with email="${email}", password="${password}"`);
+	await pushLog(LOG_LEVEL.debug, `POST /login with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`body: ${JSON.stringify(req.body)}, query: ${JSON.stringify(req.query)}`);
 	if(!email || !password) {
 		res.json({status: 403, message: "Wrong credentials"});
 		return;
@@ -344,8 +364,10 @@ router.post("/login", async (req, res) => {
 	});
 });
 
-router.get("/remember-me", (req, res) => {
+router.get("/remember-me", async (req, res) => {
 	const userId = req.query.id;
+	await pushLog(LOG_LEVEL.debug, `GET /remember-me with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`query: ${JSON.stringify(req.query)}`);
 	res.cookie("userId", userId, {
 		signed: false,
 		secure: true,
@@ -360,6 +382,8 @@ router.get("/remember-me", (req, res) => {
 });
 
 router.get("/whoami", async (req, res) => {
+	await pushLog(LOG_LEVEL.debug, `GET /whoami with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`query: ${JSON.stringify(req.query)}`);
 	const userId = req.cookies.userId;
 	if(userId === undefined) {
 		res.json(null);
@@ -369,8 +393,10 @@ router.get("/whoami", async (req, res) => {
 	res.json(user);
 });
 
-router.get("/logout", (req, res) => {
+router.get("/logout", async (req, res) => {
 	console.log("GET /logout");
+	await pushLog(LOG_LEVEL.debug, `GET /logout with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`query: ${JSON.stringify(req.query)}`);
 	const userId = req.cookies.userId;
 	console.log(`Cookie userId: ${userId}`);
 	if(userId === undefined) {
@@ -401,6 +427,16 @@ router.get("/test/init", async (req, res) => {
 	}
 	// console.log(await schema.users.find({}));
 	res.json({message: "Ok"});
+});
+
+// log user action on front-end
+router.post("/history", async (req, res) => {
+	const userId = req.query.userId;
+	if(!userId) {
+		res.json({status: 401, message: "Log in to proceed"});
+		return;
+	}
+	res.json({status: 418, message: "Not implemented"});
 });
 
 // get history by...
