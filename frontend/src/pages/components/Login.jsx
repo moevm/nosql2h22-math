@@ -29,7 +29,7 @@ export default function Login({navTrigger, setNavTrigger}){
         var body = {
             email: values.email,
             password: values.password
-        }
+        };
 
         const response = await instance.post("/login", body);
 

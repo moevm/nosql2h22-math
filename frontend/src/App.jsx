@@ -22,14 +22,12 @@ function App() {
                 <Route path='/register' element={<Register navTrigger={navTrigger} setNavTrigger={setNavTrigger}/>} />
 
                 <Route path='/' element={<Task />} />
-                <Route path='/stats' element={<Stats />} />
-                <Route path='/user_history' element={<UserHistory />} />
+                <Route path='/stats/:id' element={<Stats />} />
+                <Route path='/user_history/:id' element={<UserHistory />} />
 
                 <Route path='/add_hometask' element={<AddHometask />} />
                 <Route path='/classes' element={<Classes />} />
                 <Route path='/classes/:id' element={<Class />} />
-                <Route path='/stats/:id' element={<Stats />} />
-                <Route path='/user_history/:id' element={<UserHistory />} />
 
                 <Route path='/logs' element={<Logs />} />
                 <Route path='/history' element={<History />} />

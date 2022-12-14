@@ -1,44 +1,120 @@
-import React, { useState, useEffect } from 'react'
-import { NavLink } from "react-router-dom"
-import {SearchOutlined, FilterFilled} from '@ant-design/icons'
-import {Button, Checkbox, Col, Row, DatePicker, Table} from 'antd'
-import nav_styles from '../styles/Navigation.module.css'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { NavLink, useParams } from "react-router-dom";
+import {SearchOutlined, FilterFilled} from '@ant-design/icons';
+import {Button, Checkbox, Col, Row, DatePicker, Table} from 'antd';
+import nav_styles from '../styles/Navigation.module.css';
 
 export default function PupilHistory(){
-    const [dateFilter, setDateFilter] = useState(['', ''])
-    const [categoriesFilter, setCategoriesFilter] = useState({
-        categories: ["addition", "subtraction", "multiplication", "division"],
-        modes: ["lonely", "together", "as_part"]
-    })
-    const [resultsFilter, setResultsFilter] = useState(["correct", "not correct"])
+    const instance = axios.create({
+        baseURL: 'http://localhost:8000',
+        withCredentials: true
+    });
+
+    var {id} = useParams();
+
+    const [displayData, setDisplayData] = useState({
+        display: false,
+        viewer_role: '',
+        first_name: '',
+        last_name: ''
+    });
+
+    useEffect(() => {
+        const access = async () => {
+            const user = await instance.get('/whoami');
+            if (!user)
+                return;
+            if ((user.data._id == id)){
+                setDisplayData({...displayData, display: true, viewer_role: "pupil"});
+                return;
+            };
+            const result = await instance.get(`/access-to-user?requested=${id}`);
+            if (result.data.status == 200)
+                setDisplayData({...displayData, display: true,
+                                                viewer_role: result.data.requesterRole,
+                                                first_name: result.data.user.first_name,
+                                                last_name: result.data.user.last_name
+                });
+        }
+        access();
+    }, []);
+
+    const [dataSource, setDataSource] = useState([]);
+
+    const [filter, setFilter] = useState({
+        datetime: {
+            start_datetime: null,
+            end_datetime: null,
+            sorter: "descend"
+        },
+        categories: {
+            categories: ["addition", "subtraction", "multiplication", "division"],
+            modes: ["single", "jointly", "as_part_of"],
+        },
+        solving_time_sorter: null,
+        verdicts: ["correct", "not correct"]
+    });
 
     const getColumnDateFilterProps = () => ({
         filterDropdown: () => (
-            <DatePicker.RangePicker onChange={(date, dateString) => {setDateFilter(dateString)}}
+            <DatePicker.RangePicker onChange={(date, dateString) => {
+                                        var datetimeFilter = {...filter.datetime};
+                                        datetimeFilter.start_datetime = (dateString[0] == '') ? null : dateString[0];
+                                        datetimeFilter.end_datetime = (dateString[1] == '') ? null : dateString[1];
+                                        setFilter({...filter, datetime: datetimeFilter});
+                                    }}
                                     allowEmpty={[true, true]}
                                     showToday={true}/>
         ),
         filterIcon: () => (
-            <SearchOutlined style={{color: (dateFilter[0].length > 0 || dateFilter[1].length > 0) ? '#1890ff' : undefined}}/>
-        ),
-        onFilter: (value, record) => {},
-        render: (text) =>
-            text
+            <SearchOutlined style={{color: ((filter.datetime.start_datetime) || (filter.datetime.end_datetime)) ? '#1890ff' : undefined}}/>
+        )
     });
 
+    const responseToDataSource = (attemptsArray) => {
+        var i = 0;
+        var result = [];
+        attemptsArray.map(attempt => {
+            var solvingTimeInSecs = Date.parse(attempt.solvingTime) / 1000;
+            var solvingTimeHours = Math.floor(solvingTimeInSecs / 3600);
+            var solvingTimeMinutes = Math.floor((solvingTimeInSecs % 3600) / 60);
+            var solvingTimeSeconds = (solvingTimeInSecs % 3600) % 60;
+
+            result.push({
+                key: i++,
+                datetime: (new Date(attempt.datetime)).toGMTString().slice(5, -4),
+                content: attempt.taskContent,
+                categories: attempt.categories.join('; '),
+                solving_time: `${solvingTimeHours > 10 ? solvingTimeHours : '0' + solvingTimeHours}:` +
+                              `${solvingTimeMinutes > 10 ? solvingTimeMinutes : '0' + solvingTimeMinutes}:` +
+                              `${solvingTimeSeconds > 10 ? solvingTimeSeconds : '0' + solvingTimeSeconds}`,
+                user_answer: attempt.answer,
+                verdict: attempt.verdict ? "Верно" : "Не верно"
+            });
+        });
+        setDataSource(result);
+    };
+
+    useEffect(() => {instance.get("/personal/attempts")
+                             .then(res => responseToDataSource(res.data))}, [filter]);
+
     const handleCategories = (prop) => (list) => {
-        setCategoriesFilter({...categoriesFilter, [prop]: list})
-    }
+        var categoriesFilter = {...filter.categories};
+        categoriesFilter[prop] = list;
+        setFilter({...filter, categories: categoriesFilter});
+    };
 
     const categoriesReset = () => {
-        setCategoriesFilter({...categoriesFilter, categories: ["addition", "subtraction", "multiplication", "division"],
-                                                  modes: ["lonely", "together", "as_part"]})
-    }
+        setFilter({...filter, categories: {categories: ["addition", "subtraction", "multiplication", "division"],
+                                           modes: ["single", "jointly", "as_part_of"]}
+        });
+    };
     
     const getColumnCategoriesFilterProps = () => ({
         filterDropdown: () => (
             <div style={{backgroundColor: '#FFFFFF !important'}}>
-                <Checkbox.Group style={{margin: '4px'}} value={categoriesFilter.categories} onChange={handleCategories('categories')}>
+                <Checkbox.Group style={{margin: '4px'}} value={filter.categories.categories} onChange={handleCategories('categories')}>
                     <Col>
                         <Row>
                             <Checkbox value="addition">Сложение</Checkbox>
@@ -54,23 +130,20 @@ export default function PupilHistory(){
                         </Row>
                     </Col>
                 </Checkbox.Group>
-                <Checkbox.Group style={{margin: '4px'}} value={categoriesFilter.modes} onChange={handleCategories('modes')}>
+                <Checkbox.Group style={{margin: '4px'}} value={filter.categories.modes} onChange={handleCategories('modes')}>
                     <Col>
                         <Row>
-                            <Checkbox value="lonely">Одиночные</Checkbox>
+                            <Checkbox value="single">Одиночные</Checkbox>
                         </Row>
                         <Row>
-                            <Checkbox value="together">Совместно</Checkbox>
+                            <Checkbox value="jointly">Совместно</Checkbox>
                         </Row>
                         <Row>
-                            <Checkbox value="as_part">В составе</Checkbox>
+                            <Checkbox value="as_part_of">В составе</Checkbox>
                         </Row>
                     </Col>
                 </Checkbox.Group>
                 <div style={{display: 'flex'}}>
-                    <Button type="primary" style={{width: '100%', margin: 'auto'}}>
-                        Apply
-                    </Button>
                     <Button style={{width: '100%', margin: 'auto'}} onClick={categoriesReset}>
                         Reset
                     </Button>
@@ -78,25 +151,22 @@ export default function PupilHistory(){
             </div>
         ),
         filterIcon: () => (
-            <FilterFilled style={{color: (categoriesFilter.categories.length + categoriesFilter.modes.length) < 7 ? '#1890ff' : undefined}}/>
-        ),
-        onFilter: (value, record) => {},
-        render: (text) =>
-            text
+            <FilterFilled style={{color: (filter.categories.categories.length + filter.categories.modes.length) < 7 ? '#1890ff' : undefined}}/>
+        )
     });
 
-    const handleResults = (list) => {
-        setResultsFilter(list)
-    }
+    const handleVerdicts = (list) => {
+        setFilter({...filter, verdicts: list});
+    };
 
-    const resultsReset = () => {
-        setResultsFilter(["correct", "not correct"])
-    }
+    const verdictsReset = () => {
+        setFilter({...filter, verdicts: ["correct", "not correct"]});
+    };
 
     const getColumnResultFilterProps = () => ({
         filterDropdown: () => (
             <div style={{backgroundColor: '#FFFFFF !important'}}>
-                <Checkbox.Group style={{margin: '4px'}} value={resultsFilter} onChange={handleResults}>
+                <Checkbox.Group style={{margin: '4px'}} value={filter.verdicts} onChange={handleVerdicts}>
                     <Col>
                         <Row>
                             <Checkbox value="correct">Верно</Checkbox>
@@ -107,75 +177,21 @@ export default function PupilHistory(){
                     </Col>
                 </Checkbox.Group>
                 <div style={{display: 'flex'}}>
-                    <Button type="primary" style={{width: '100%', margin: 'auto'}}>
-                        Apply
-                    </Button>
-                    <Button style={{width: '100%', margin: 'auto'}} onClick={resultsReset}>
+                    <Button style={{width: '100%', margin: 'auto'}} onClick={verdictsReset}>
                         Reset
                     </Button>
                 </div>
             </div>
         ),
         filterIcon: () => (
-            <FilterFilled style={{color: (categoriesFilter.categories.length + categoriesFilter.modes.length) < 7 ? '#1890ff' : undefined}}/>
-        ),
-        onFilter: (value, record) => {},
-        render: (text) =>
-            text
-    })
-
-    const dataSource = [
-        {
-            key: '1',
-            end_timestamp: '09:11:03 2023-11-23',
-            content: '23x17-13',
-            categories: ['subtraction', 'multiplication'].join('; '),
-            time_spent: '00:01:12',
-            user_answer: '15',
-            status: 'not correct'
-        },
-        {
-            key: '2',
-            end_timestamp: '09:09:03 2023-11-23',
-            content: '10+5',
-            categories: ['addition'].join('; '),
-            time_spent: '00:00:17',
-            user_answer: '15',
-            status: 'correct'
-        },
-        {
-            key: '3',
-            end_timestamp: '09:08:15 2023-11-23',
-            content: '10x7+31',
-            categories: ['addition', 'multiplication'].join('; '),
-            time_spent: '00:02:01',
-            user_answer: '101',
-            status: 'correct'
-        },
-        {
-            key: '4',
-            end_timestamp: '09:05:32 2023-11-23',
-            content: '26+18/3',
-            categories: ['addition', 'division'].join('; '),
-            time_spent: '00:01:51',
-            user_answer: '32',
-            status: 'correct'
-        },
-        {
-            key: '5',
-            end_timestamp: '09:04:32 2023-11-23',
-            content: '26+18/3',
-            categories: ['addition', 'division'].join('; '),
-            time_spent: '00:01:31',
-            user_answer: '30',
-            status: 'not correct'
-        }
-    ];
+            <FilterFilled style={{color: filter.verdicts.length < 2 ? '#1890ff' : undefined}}/>
+        )
+    });
 
     const columns = [
         {
             title: 'Дата',
-            dataIndex: 'end_timestamp',
+            dataIndex: 'datetime',
             key: 'date',
             ...getColumnDateFilterProps(),
             defaultSortOrder: 'descend',
@@ -194,8 +210,8 @@ export default function PupilHistory(){
         },
         {
             title: 'Время ответа',
-            dataIndex: 'time_spent',
-            key: 'time_spent',
+            dataIndex: 'solving_time',
+            key: 'solving_time',
             sorter: () => {}
         },
         {
@@ -205,44 +221,59 @@ export default function PupilHistory(){
         },
         {
             title: 'Результат',
-            dataIndex: 'status',
+            dataIndex: 'verdict',
             key: 'result',
             ...getColumnResultFilterProps()
         }
     ];
 
-    const onchange = (pagination, filters, sorter, extra) => {
-        console.log('params', pagination, filters, sorter, extra);
+    const handleChangeSort = (pagination, filters, sorter, extra) => {
+        var filterNew = {...filter};
+        switch (sorter.field){
+            case 'datetime':
+                filterNew.datetime.sorter = (sorter.order == undefined) ? null : sorter.order;
+                filterNew.solving_time_sorter = null;
+                setFilter(filterNew);
+                break;
+            case 'solving_time':
+                filterNew.solving_time_sorter = (sorter.order == undefined) ? null : sorter.order;
+                filterNew.datetime.sorter = null;
+                setFilter(filterNew);
+                break;
+            default:
+                break;
+        };
     };
 
-    let activeStyle = {
-        color: "#07889B"
+    const getSubNavigation = () => {
+        var activeStyle = {
+            color: "#07889B"
+        };
+        return <div className={nav_styles.navbar}>
+                   <div className={nav_styles.center}>
+                       <div>{`${displayData.first_name} ${displayData.last_name}`}:</div>
+                       <NavLink
+                           to={"/stats/" + id}
+                           style={({ isActive }) =>
+                           isActive ? activeStyle : undefined
+                           }>Статистика</NavLink>
+                       <NavLink
+                           to={"/user_history/" + id}
+                           style={({ isActive }) =>
+                           isActive ? activeStyle : undefined
+                           }>История</NavLink>
+                   </div>
+               </div>
     };
-
-    let role = "teacher"
-
-    let teacher_navigation = <></>
-    if (role == "teacher")
-        teacher_navigation = <div className={nav_styles.navbar}>
-            <div className={nav_styles.center}>
-                <div>Имя Фамилия:</div>
-                <NavLink
-                    to="/stats"
-                    style={({ isActive }) =>
-                    isActive ? activeStyle : undefined
-                    }>Статистика</NavLink>
-                <NavLink
-                    to="/user_history"
-                    style={({ isActive }) =>
-                    isActive ? activeStyle : undefined
-                    }>История</NavLink>
-            </div>
-        </div>
 
     return (
     <>
-        {teacher_navigation}
-        <Table dataSource={dataSource} columns={columns} pagination={false} onChange={onchange}/>
+        {
+            displayData.display ? <>
+                {(displayData.viewer_role !== "pupil") ? getSubNavigation() : <div style={{marginTop: "50px"}}></div>}
+                <Table dataSource={dataSource} columns={columns} pagination={false} onChange={handleChangeSort}/>
+            </> : <div>You can't access to this information</div>
+        }
     </>  
     )
 }
