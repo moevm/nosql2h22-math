@@ -162,38 +162,40 @@ router.get("/personal/last-categories", async (req, res) => {
 });
 
 // get attempts for a user filtered by...
-router.get("/personal/attempts",
-	async (req, res) => {
-		// const userId = req.session.userId;
-		const requestedUserId = req.query.userId; // если запрос со стороны учителя, то userId !== requestedUserId
-		const sortByDatetime = req.query.sortByDatetime; // "asc" | "desc" | null
-		const sortBySolvingTime = req.query.sortBySolvingTime; // "asc" | "desc" | null
-		const taskContent = req.query.taskContent;
-		const categories = req.query.categories;
-		const answer = req.query.answer;
-		const verdict = req.query.verdict; // null | "correct" | "not correct" | "in progress"
-		// res.status(400).send(`${something} is not ${some_type}`)
-		// res.status(401).send("Log in to proceed")
-		// res.status(403).send("Requested pupil is not in any of this teacher's classes")
-		res.json([
-			{
-				datetime: "2022-11-15T06:31:15.000Z",
-				taskContent: "16x3-17",
-				categories: ["subtraction", "multiplication"],
-				solvingTime: "1970-01-01T00:01:02.000Z",
-				answer: 42,
-				verdict: false
-			},
-			{
-				datetime: "2022-11-15T09:25:00.000Z",
-				taskContent: "82-65-11",
-				categories: ["subtraction"],
-				solvingTime: "1970-01-01T00:00:42.000Z",
-				answer: 6,
-				verdict: true
-			}
-		]);
-	});
+router.get("/personal/attempts", async (req, res) => {
+	const userId = req.query.userId;
+	const page = Number(req.query.page);
+	const limit = Number(req.query.limit);
+	const requestedUserId = req.query.userId; // если запрос со стороны учителя, то userId !== requestedUserId
+	const sortByDatetime = req.query.sortByDatetime; // "asc" | "desc" | null
+	const sortBySolvingTime = req.query.sortBySolvingTime; // "asc" | "desc" | null
+	const taskContent = req.query.taskContent;
+	const categories = req.query.categories;
+	const answer = req.query.answer;
+	const verdict = req.query.verdict; // null | "correct" | "not correct" | "in progress"
+	// res.status(400).send(`${something} is not ${some_type}`)
+	// res.status(401).send("Log in to proceed")
+	// res.status(403).send("Requested pupil is not in any of this teacher's classes")
+	const taskIds = (await schema.users.findOne({"_id": ObjectId(userId)}, {"_id": 0, "tasks": 1})).tasks;
+	const attemptsCount = (await schema.tasks.aggregate([
+		{$match: {'_id': {$in: taskIds}}},
+		{$unwind: {'path': '$attempts'}},
+		{$match: {'attempts.status': {$in: ["correct", "not correct"]}}}])).length;
+	const attempts = await schema.tasks.aggregate([
+		{$match: {'_id': {$in: taskIds}}},
+		{$unwind: {'path': '$attempts'}},
+		{$match: {'attempts.status': {$in: ["correct", "not correct"]}}},
+		{$project: {'_id': 0,
+		            'datetime': '$attempts.end_timestamp',
+				    'taskContent': '$content',
+					'categories': '$categories',
+				    'solvingTime': {$subtract: ['$attempts.end_timestamp', '$attempts.start_timestamp']},
+					'answer': '$attempts.user_answer',
+					'verdict': '$attempts.status'}},
+		{$sort: {'datetime': -1}}
+	]).skip((page - 1) * limit).limit(limit);
+	res.json({attempts: attempts, totalElements: attemptsCount});
+});
 
 // publish new homework
 router.post("/classes/homeworks", async (req, res) => {
@@ -369,7 +371,8 @@ router.get("/access-to-user", async (req, res) => {
 	const requestedUser = await schema.users.findOne({_id: ObjectId(requestedId)});
 	if (!requestedUser){
 		res.json({status: 400, message: `User with id=${requestedId} not found`});
-	}
+		return;
+	};
 	if (requesterRole === "administrator"){
 		res.json({
 			status: 200,
@@ -377,17 +380,18 @@ router.get("/access-to-user", async (req, res) => {
 			requesterRole: req.cookies.userRole
 		});
 		return;
-	}
+	};
 	const requestedUserRole = requestedUser.role;
 	if ((requesterRole === "pupil") || (requestedUserRole !== "pupil")){
 		res.json({status: 403, message: "Access denied"})
-	}
+		return;
+	};
 	res.json({
 		status: 200,
 		user: requestedUser,
 		requesterRole: req.cookies.userRole
 	});
-})
+});
 
 router.get("/whoami", async (req, res) => {
 	const userId = req.cookies.userId;
