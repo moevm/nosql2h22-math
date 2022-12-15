@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { NavLink, useParams } from "react-router-dom";
+import { NavLink, useParams, useLocation, useNavigate } from "react-router-dom";
 import {SearchOutlined, FilterFilled} from '@ant-design/icons';
 import {Button, Checkbox, Col, Row, DatePicker, Table} from 'antd';
 import nav_styles from '../styles/Navigation.module.css';
@@ -13,6 +13,12 @@ export default function PupilHistory(){
 
     var {id} = useParams();
 
+    const navigate = useNavigate();
+
+    const query = new URLSearchParams(useLocation().search);
+
+    const [totalElements, setTotalElements] = useState(0);
+
     const [displayData, setDisplayData] = useState({
         display: false,
         viewer_role: '',
@@ -23,9 +29,9 @@ export default function PupilHistory(){
     useEffect(() => {
         const access = async () => {
             const user = await instance.get('/whoami');
-            if (!user)
+            if (!user.data)
                 return;
-            if ((user.data._id == id)){
+            if (user.data._id == id){
                 setDisplayData({...displayData, display: true, viewer_role: "pupil"});
                 return;
             };
@@ -34,49 +40,57 @@ export default function PupilHistory(){
                 setDisplayData({...displayData, display: true,
                                                 viewer_role: result.data.requesterRole,
                                                 first_name: result.data.user.first_name,
-                                                last_name: result.data.user.last_name
-                });
+                                                last_name: result.data.user.last_name});
         }
         access();
+        var filterNew = {...filter};
+        filterNew.page = query.get('page') == null ? 1 : Number(query.get('page'));
+        filterNew.limit = query.get('limit') == null ? 10 : Number(query.get('limit'));
+        filterNew.start_datetime = query.get('start_datetime');
+        filterNew.end_datetime = query.get('end_datetime');
+        filterNew.categories = query.get('categories') == null ? ["addition", "subtraction", "multiplication", "division"] : query.get('categories').split(',');
+        filterNew.modes = query.get('modes') == null ? ["single", "jointly", "as_part_of"] : query.get('modes').split(',');
+        filterNew.verdicts = query.get('verdicts') == null ? ["correct", "not correct"] : query.get('verdicts').split(',');
+        setFilter(filterNew);
     }, []);
 
     const [dataSource, setDataSource] = useState([]);
 
     const [filter, setFilter] = useState({
-        datetime: {
-            start_datetime: null,
-            end_datetime: null,
-            sorter: "descend"
-        },
-        categories: {
-            categories: ["addition", "subtraction", "multiplication", "division"],
-            modes: ["single", "jointly", "as_part_of"],
-        },
+        start_datetime: null,
+        end_datetime: null,
+        datetime_sorter: "descend",
+        categories: ["addition", "subtraction", "multiplication", "division"],
+        modes: ["single", "jointly", "as_part_of"],
         solving_time_sorter: null,
-        verdicts: ["correct", "not correct"]
+        verdicts: ["correct", "not correct"],
+        page: 1,
+        limit: 10
     });
 
     const getColumnDateFilterProps = () => ({
         filterDropdown: () => (
             <DatePicker.RangePicker onChange={(date, dateString) => {
-                                        var datetimeFilter = {...filter.datetime};
-                                        datetimeFilter.start_datetime = (dateString[0] == '') ? null : dateString[0];
-                                        datetimeFilter.end_datetime = (dateString[1] == '') ? null : dateString[1];
-                                        setFilter({...filter, datetime: datetimeFilter});
+                                        var datetimeFilter = {...filter};
+                                        datetimeFilter.start_datetime = dateString[0] == "" ? null : dateString[0];
+                                        datetimeFilter.end_datetime = dateString[1] == "" ? null : dateString[1];
+                                        setFilter(datetimeFilter);
                                     }}
                                     allowEmpty={[true, true]}
                                     showToday={true}/>
         ),
         filterIcon: () => (
-            <SearchOutlined style={{color: ((filter.datetime.start_datetime) || (filter.datetime.end_datetime)) ? '#1890ff' : undefined}}/>
+            <SearchOutlined style={{color: ((filter.start_datetime) || (filter.end_datetime) || (filter.start_datetime != null) || (filter.end_datetime != null)) ? '#1890ff' : undefined}}/>
         )
     });
 
-    const responseToDataSource = (attemptsArray) => {
+    const responseToDataSource = (response) => {
         var i = 0;
         var result = [];
+        var attemptsArray = response.attempts;
+        setTotalElements(response.totalElements);
         attemptsArray.map(attempt => {
-            var solvingTimeInSecs = Date.parse(attempt.solvingTime) / 1000;
+            var solvingTimeInSecs = Math.floor(attempt.solvingTime / 1000);
             var solvingTimeHours = Math.floor(solvingTimeInSecs / 3600);
             var solvingTimeMinutes = Math.floor((solvingTimeInSecs % 3600) / 60);
             var solvingTimeSeconds = (solvingTimeInSecs % 3600) % 60;
@@ -86,35 +100,47 @@ export default function PupilHistory(){
                 datetime: (new Date(attempt.datetime)).toGMTString().slice(5, -4),
                 content: attempt.taskContent,
                 categories: attempt.categories.join('; '),
-                solving_time: `${solvingTimeHours > 10 ? solvingTimeHours : '0' + solvingTimeHours}:` +
-                              `${solvingTimeMinutes > 10 ? solvingTimeMinutes : '0' + solvingTimeMinutes}:` +
-                              `${solvingTimeSeconds > 10 ? solvingTimeSeconds : '0' + solvingTimeSeconds}`,
+                solving_time: `${solvingTimeHours > 9 ? solvingTimeHours : '0' + solvingTimeHours}:` +
+                              `${solvingTimeMinutes > 9 ? solvingTimeMinutes : '0' + solvingTimeMinutes}:` +
+                              `${solvingTimeSeconds > 9 ? solvingTimeSeconds : '0' + solvingTimeSeconds}`,
                 user_answer: attempt.answer,
-                verdict: attempt.verdict ? "Верно" : "Не верно"
+                verdict: (attempt.verdict == "correct") ? "Верно" : "Не верно"
             });
         });
         setDataSource(result);
     };
 
-    useEffect(() => {instance.get("/personal/attempts")
-                             .then(res => responseToDataSource(res.data))}, [filter]);
+    useEffect(() => {
+        if (displayData.display){
+            query.set('page', filter.page);
+            query.set('limit', filter.limit);
+            query.set('start_datetime', filter.start_datetime);
+            query.set('end_datetime', filter.end_datetime);
+            query.set('categories', filter.categories);
+            query.set('modes', filter.modes);
+            query.set('verdicts', filter.verdicts);
+            navigate('?' + query.toString());
+            instance.get(`/personal/attempts?userId=${id}&${query.toString()}&datetime_sorter=${filter.datetime_sorter}&solving_time_sorter=${filter.solving_time_sorter}`)
+                    .then(res => responseToDataSource(res.data));
+            
+        }}, [filter, displayData]);
 
     const handleCategories = (prop) => (list) => {
-        var categoriesFilter = {...filter.categories};
+        var categoriesFilter = {...filter};
         categoriesFilter[prop] = list;
-        setFilter({...filter, categories: categoriesFilter});
+        setFilter(categoriesFilter);
     };
 
     const categoriesReset = () => {
-        setFilter({...filter, categories: {categories: ["addition", "subtraction", "multiplication", "division"],
-                                           modes: ["single", "jointly", "as_part_of"]}
+        setFilter({...filter, categories: ["addition", "subtraction", "multiplication", "division"],
+                              modes: ["single", "jointly", "as_part_of"]
         });
     };
     
     const getColumnCategoriesFilterProps = () => ({
         filterDropdown: () => (
             <div style={{backgroundColor: '#FFFFFF !important'}}>
-                <Checkbox.Group style={{margin: '4px'}} value={filter.categories.categories} onChange={handleCategories('categories')}>
+                <Checkbox.Group style={{margin: '4px'}} value={filter.categories} onChange={handleCategories('categories')}>
                     <Col>
                         <Row>
                             <Checkbox value="addition">Сложение</Checkbox>
@@ -130,7 +156,7 @@ export default function PupilHistory(){
                         </Row>
                     </Col>
                 </Checkbox.Group>
-                <Checkbox.Group style={{margin: '4px'}} value={filter.categories.modes} onChange={handleCategories('modes')}>
+                <Checkbox.Group style={{margin: '4px'}} value={filter.modes} onChange={handleCategories('modes')}>
                     <Col>
                         <Row>
                             <Checkbox value="single">Одиночные</Checkbox>
@@ -151,7 +177,7 @@ export default function PupilHistory(){
             </div>
         ),
         filterIcon: () => (
-            <FilterFilled style={{color: (filter.categories.categories.length + filter.categories.modes.length) < 7 ? '#1890ff' : undefined}}/>
+            <FilterFilled style={{color: (filter.categories.length + filter.modes.length) < 7 ? '#1890ff' : undefined}}/>
         )
     });
 
@@ -227,22 +253,23 @@ export default function PupilHistory(){
         }
     ];
 
-    const handleChangeSort = (pagination, filters, sorter, extra) => {
+    const handleChangeFilters = (pagination, filters, sorter, extra) => {
         var filterNew = {...filter};
+        filterNew.page = pagination.current;
+        filterNew.limit = pagination.pageSize;
         switch (sorter.field){
             case 'datetime':
-                filterNew.datetime.sorter = (sorter.order == undefined) ? null : sorter.order;
+                filterNew.datetime_sorter = (sorter.order == undefined) ? null : sorter.order;
                 filterNew.solving_time_sorter = null;
-                setFilter(filterNew);
                 break;
             case 'solving_time':
                 filterNew.solving_time_sorter = (sorter.order == undefined) ? null : sorter.order;
-                filterNew.datetime.sorter = null;
-                setFilter(filterNew);
+                filterNew.datetime_sorter = null;
                 break;
             default:
                 break;
         };
+        setFilter(filterNew);
     };
 
     const getSubNavigation = () => {
@@ -271,7 +298,7 @@ export default function PupilHistory(){
         {
             displayData.display ? <>
                 {(displayData.viewer_role !== "pupil") ? getSubNavigation() : <div style={{marginTop: "50px"}}></div>}
-                <Table dataSource={dataSource} columns={columns} pagination={false} onChange={handleChangeSort}/>
+                <Table dataSource={dataSource} columns={columns} pagination={{total: totalElements, showQuickJumper: true}} onChange={handleChangeFilters} />
             </> : <div>You can't access to this information</div>
         }
     </>  

@@ -24,19 +24,18 @@ export default function Stats(){
     useEffect(() => {
         const access = async () => {
             const user = await instance.get('/whoami');
-            if (!user)
+            if (!user.data)
                 return;
-            if ((user.data._id == id)){
+            if (user.data._id == id){
                 setDisplayData({...displayData, display: true, viewer_role: "pupil"});
                 return;
-            }
+            };
             const result = await instance.get(`/access-to-user?requested=${id}`);
             if (result.data.status == 200)
                 setDisplayData({...displayData, display: true,
                                                 viewer_role: result.data.requesterRole,
                                                 first_name: result.data.user.first_name,
-                                                last_name: result.data.user.last_name
-                });
+                                                last_name: result.data.user.last_name});
         };
         access();
     }, []);
