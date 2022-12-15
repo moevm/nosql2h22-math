@@ -1,48 +1,98 @@
 import React, { useState, useEffect } from 'react'
+import axios from 'axios';
+import dayjs from 'dayjs';
+import { NavLink, useParams, useLocation, useNavigate } from "react-router-dom";
 import {SearchOutlined, FilterFilled} from '@ant-design/icons'
 import {Input, Space,Button, Checkbox, Col, Row, DatePicker, Table} from 'antd'
 
 export default function History(){
-    const [dateFilter, setDateFilter] = useState(['', ''])
-    const [rolesFilter, setRolesFilter] = useState(["pupil", "teacher"])
-    const [searchFilter, setSearchFilter] = useState({
-        login: '',
-        action: '',
-        content: ''
+    const instance = axios.create({
+        baseURL: 'http://localhost:8000',
+        withCredentials: true
+    });
+
+    const navigate = useNavigate();
+
+    const query = new URLSearchParams(useLocation().search);
+
+    const [display, setDisplay] = useState(false);
+
+    const [totalElements, setTotalElements] = useState(0);
+
+    const [dataSource, setDataSource] = useState([]);
+
+    const [filter, setFilter] = useState({
+        start_datetime: '',
+        end_datetime: '',
+        datetime_sorter: "descend",
+        roles: ["pupil", "teacher"],
+        login_search: '',
+        action_search: '',
+        content_search: '',
+        page: 1,
+        limit: 10
     })
+
+    useEffect(() => {
+        const access = async () => {
+            const user = await instance.get('/whoami');
+            if (!user.data)
+                return;
+            if (user.data.role == 'administrator'){
+                setDisplay(true);
+                return;
+            };
+        }
+        access();
+        var filterNew = {...filter};
+        filterNew.page = query.get('page') == null ? 1 : Number(query.get('page'));
+        filterNew.start_datetime = query.get('start_datetime') == null ? '' : query.get('start_datetime');
+        filterNew.end_datetime = query.get('end_datetime') == null ? '' : query.get('end_datetime');
+        filterNew.roles = query.get('roles') == null ? ["pupil", "teacher"] : query.get('roles').split(',');
+        filterNew.login_search = query.get('login_search') == null ? '' : query.get('login_search');
+        filterNew.action_search = query.get('action_search') == null ? '' : query.get('action_search');
+        filterNew.content_search = query.get('content_search') == null ? '' : query.get('content_search');
+        setFilter(filterNew);
+    }, []);
 
     const getColumnDateFilterProps = () => ({
         filterDropdown: () => (
-            <DatePicker.RangePicker onChange={(date, dateString) => {setDateFilter(dateString)}}
-                                    allowEmpty={[true, true]}
-                                    showToday={true}/>
+            <DatePicker.RangePicker allowEmpty={[true, true]} showToday={true}
+                                    onChange={(date, dateString) => {
+                                        var datetimeFilter = {...filter};
+                                        datetimeFilter.start_datetime = dateString[0];
+                                        datetimeFilter.end_datetime = dateString[1];
+                                        setFilter(datetimeFilter)
+                                        }
+                                    }
+                                    defaultValue={[filter.start_datetime == '' ? '' : dayjs(filter.start_datetime, 'YYYY-MM-DD'),
+                                                filter.end_datetime == '' ? '' : dayjs(filter.end_datetime, 'YYYY-MM-DD')]}/>
         ),
         filterIcon: () => (
-            <SearchOutlined style={{color: (dateFilter[0].length > 0 || dateFilter[1].length > 0) ? '#1890ff' : undefined}}/>
-        ),
-        onFilter: (value, record) => {},
-        render: (text) =>
-            text
+            <SearchOutlined style={{color: ((filter.start_datetime != '') || (filter.end_datetime != '')) ? '#1890ff' : undefined}}/>
+        )
     });
 
     const handleSearch = (prop) => (e) => {
-        console.log(prop)
-        console.log(e.target.value)
-        setSearchFilter({...searchFilter, [prop]: e.target.value})
+        setFilter({...filter, [prop]: e.target.value})
     }
 
     const handleRoles = (list) => {
-        setRolesFilter(list)
+        setFilter({...filter, roles: list})
     }
 
     const rolesReset = () => {
-        setRolesFilter(["pupil", "teacher"])
+        setFilter({...filter, roles: ["pupil", "teacher"]});
     }
+
+    useEffect(() => {
+        console.log(filter)
+    }, [filter])
     
     const getColumnRolesFilterProps = () => ({
         filterDropdown: () => (
             <div style={{backgroundColor: '#FFFFFF !important'}}>
-                <Checkbox.Group style={{margin: '4px'}} value={rolesFilter} onChange={handleRoles}>
+                <Checkbox.Group style={{margin: '4px'}} value={filter.roles} onChange={handleRoles}>
                     <Col>
                         <Row>
                             <Checkbox value="pupil">Ученик</Checkbox>
@@ -53,9 +103,6 @@ export default function History(){
                     </Col>
                 </Checkbox.Group>
                 <div style={{display: 'flex'}}>
-                    <Button type="primary" style={{width: '100%', margin: 'auto'}}>
-                        Apply
-                    </Button>
                     <Button style={{width: '100%', margin: 'auto'}} onClick={rolesReset}>
                         Reset
                     </Button>
@@ -63,72 +110,75 @@ export default function History(){
             </div>
         ),
         filterIcon: () => (
-            <FilterFilled style={{color: rolesFilter.length < 2 ? '#1890ff' : undefined}}/>
-        ),
-        onFilter: (value, record) => {},
-        render: (text) =>
-            text
+            <FilterFilled style={{color: filter.roles.length < 2 ? '#1890ff' : undefined}}/>
+        )
     });
 
     const getContentSearchFilterProps = (prop) => ({
         filterDropdown: () => (
             <div style={{padding: 8,}} onKeyDown={(e) => e.stopPropagation()}>
                 <Input placeholder={'Введите часть сообщения'}
-                       value={searchFilter[prop]}
+                       value={filter[prop]}
                        onChange={handleSearch(prop)}
                        onPressEnter={() => {}}
                        style={{marginBottom: 8, display: 'block',}}/>
                 <Space>
-                <Button type="primary"
-                        onClick={() => {}}
-                        icon={<SearchOutlined />}
-                        size="small"
-                        style={{width: 90}}>Apply</Button>
-                <Button onClick={() => setMessageFilter('')}
+                <Button onClick={() => setFilter({...filter, [prop]: ''})}
                     size="small"
                     style={{width: 90}}>Reset</Button>
                 </Space>
             </div>
             ),
-            filterIcon: () => (
+        filterIcon: () => (
             <SearchOutlined
                 style={{
-                color: searchFilter[prop].length > 0 ? '#1890ff' : undefined,
+                color: filter[prop].length > 0 ? '#1890ff' : undefined,
                 }}
             />
-            ),
-            onFilter: (value, record) => {}
-        });
+        )
+    });
 
-    const dataSource = [
-        {
-            key: '1',
-            end_timestamp: '09:11:03 2023-11-23',
-            login: 'asdasd@gmail.com',
-            role: 'Ученик',
-            action: 'Передвижение мыши',
-            content: 'Мышь перемешена в координаты 1233 213'
-        },{
-            key: '2',
-            end_timestamp: '09:11:03 2023-11-23',
-            login: 'asdas321d@gmail.com',
-            role: 'Ученик',
-            action: 'Редактирование ответа',
-            content: 'Изменение ответа с "13" на "22"'
-        },{
-            key: '3',
-            end_timestamp: '09:11:03 2023-11-23',
-            login: 'asda22sd@gmail.com',
-            role: 'Учитель',
-            action: 'Создание класса',
-            content: 'Создан класс "1А"'
-        }
-    ];
+    const responseToDataSource = (response) => {
+        var i = 0;
+        var result = [];
+        var historyArray = response.history;
+        setTotalElements(response.totalElements);
+        historyArray.map(record => {
+            result.push({
+                key: i++,
+                timestamp: (new Date(record.timestamp)).toGMTString().slice(5, -4),
+                login: record.login,
+                role: record.role,
+                action: record.action,
+                content: record.content
+            });
+        });
+        setDataSource(result);
+    };
+
+    useEffect(() => {
+        if (display){
+            query.set('page', filter.page);
+            query.set('start_datetime', filter.start_datetime);
+            query.set('end_datetime', filter.end_datetime);
+            query.set('roles', filter.roles);
+            query.set('login_search', filter.login_search);
+            query.set('action_search', filter.action_search);
+            query.set('content_search', filter.content_search);
+            navigate('?' + query.toString());
+            instance.get(`/history?${query.toString()}&limit=${filter.limit}&datetime_sorter=${filter.datetime_sorter}`)
+                    .then(res => {
+                        console.log(res.data)
+                        if (res.data.status == 200)
+                            responseToDataSource(res.data)
+                    });
+            
+        }}, [filter, display]);
 
     const columns = [
         {
             title: 'Дата',
-            dataIndex: 'end_timestamp',
+            dataIndex: 'timestamp',
             key: 'date',
             ...getColumnDateFilterProps(),
             defaultSortOrder: 'descend',
@@ -138,7 +188,7 @@ export default function History(){
             title: 'Логин',
             dataIndex: 'login',
             key: 'login',
-            ...getContentSearchFilterProps('login')
+            ...getContentSearchFilterProps('login_search')
         },
         {
             title: 'Тип пользователя',
@@ -150,23 +200,32 @@ export default function History(){
             title: 'Действие',
             dataIndex: 'action',
             key: 'action',
-            ...getContentSearchFilterProps('action')
+            ...getContentSearchFilterProps('action_search')
         },
         {
             title: 'Сообщение',
             dataIndex: 'content',
             key: 'content',
-            ...getContentSearchFilterProps('content')
+            ...getContentSearchFilterProps('content_search')
         }
     ];
 
-    const onchange = (pagination, filters, sorter, extra) => {
-        console.log('params', pagination, filters, sorter, extra);
+    const handleChangeFilters = (pagination, filters, sorter, extra) => {
+        var filterNew = {...filter};
+        filterNew.page = pagination.current;
+        filterNew.limit = pagination.pageSize;
+        switch (sorter.field){
+            case 'timestamp':
+                filterNew.datetime_sorter = (sorter.order == undefined) ? '' : sorter.order;
+            default:
+                break;
+        };
+        setFilter(filterNew);
     };
 
     return (
     <>
-        <Table dataSource={dataSource} columns={columns} pagination={false} onChange={onchange}/>
+        <Table dataSource={dataSource} columns={columns} pagination={{total: totalElements, showQuickJumper: true}} onChange={handleChangeFilters} />
     </>  
     )
 }

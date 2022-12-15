@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import dayjs from 'dayjs';
 import { NavLink, useParams, useLocation, useNavigate } from "react-router-dom";
 import {SearchOutlined, FilterFilled} from '@ant-design/icons';
 import {Button, Checkbox, Col, Row, DatePicker, Table} from 'antd';
@@ -26,6 +27,20 @@ export default function PupilHistory(){
         last_name: ''
     });
 
+    const [dataSource, setDataSource] = useState([]);
+
+    const [filter, setFilter] = useState({
+        start_datetime: '',
+        end_datetime: '',
+        datetime_sorter: "descend",
+        categories: ["addition", "subtraction", "multiplication", "division"],
+        modes: ["single", "jointly", "as_part_of"],
+        solving_time_sorter: '',
+        verdicts: ["correct", "not correct"],
+        page: 1,
+        limit: 10
+    });
+
     useEffect(() => {
         const access = async () => {
             const user = await instance.get('/whoami');
@@ -46,41 +61,29 @@ export default function PupilHistory(){
         var filterNew = {...filter};
         filterNew.page = query.get('page') == null ? 1 : Number(query.get('page'));
         filterNew.limit = query.get('limit') == null ? 10 : Number(query.get('limit'));
-        filterNew.start_datetime = query.get('start_datetime');
-        filterNew.end_datetime = query.get('end_datetime');
+        filterNew.start_datetime = query.get('start_datetime') == null ? '' : query.get('start_datetime');
+        filterNew.end_datetime = query.get('end_datetime') == null ? '' : query.get('end_datetime');
         filterNew.categories = query.get('categories') == null ? ["addition", "subtraction", "multiplication", "division"] : query.get('categories').split(',');
         filterNew.modes = query.get('modes') == null ? ["single", "jointly", "as_part_of"] : query.get('modes').split(',');
         filterNew.verdicts = query.get('verdicts') == null ? ["correct", "not correct"] : query.get('verdicts').split(',');
         setFilter(filterNew);
     }, []);
 
-    const [dataSource, setDataSource] = useState([]);
-
-    const [filter, setFilter] = useState({
-        start_datetime: null,
-        end_datetime: null,
-        datetime_sorter: "descend",
-        categories: ["addition", "subtraction", "multiplication", "division"],
-        modes: ["single", "jointly", "as_part_of"],
-        solving_time_sorter: null,
-        verdicts: ["correct", "not correct"],
-        page: 1,
-        limit: 10
-    });
-
     const getColumnDateFilterProps = () => ({
         filterDropdown: () => (
             <DatePicker.RangePicker onChange={(date, dateString) => {
                                         var datetimeFilter = {...filter};
-                                        datetimeFilter.start_datetime = dateString[0] == "" ? null : dateString[0];
-                                        datetimeFilter.end_datetime = dateString[1] == "" ? null : dateString[1];
+                                        datetimeFilter.start_datetime = dateString[0];
+                                        datetimeFilter.end_datetime = dateString[1];
                                         setFilter(datetimeFilter);
                                     }}
                                     allowEmpty={[true, true]}
-                                    showToday={true}/>
+                                    showToday={true}
+                                    defaultValue={[filter.start_datetime == '' ? '' : dayjs(filter.start_datetime, 'YYYY-MM-DD'),
+                                                   filter.end_datetime == '' ? '' : dayjs(filter.end_datetime, 'YYYY-MM-DD')]}/>
         ),
         filterIcon: () => (
-            <SearchOutlined style={{color: ((filter.start_datetime) || (filter.end_datetime) || (filter.start_datetime != null) || (filter.end_datetime != null)) ? '#1890ff' : undefined}}/>
+            <SearchOutlined style={{color: ((filter.start_datetime != '') || (filter.end_datetime != '')) ? '#1890ff' : undefined}}/>
         )
     });
 
@@ -121,7 +124,10 @@ export default function PupilHistory(){
             query.set('verdicts', filter.verdicts);
             navigate('?' + query.toString());
             instance.get(`/personal/attempts?userId=${id}&${query.toString()}&datetime_sorter=${filter.datetime_sorter}&solving_time_sorter=${filter.solving_time_sorter}`)
-                    .then(res => responseToDataSource(res.data));
+                    .then(res => {
+                        if (res.data.status == 200)
+                            responseToDataSource(res.data)
+                    });
             
         }}, [filter, displayData]);
 
@@ -259,12 +265,12 @@ export default function PupilHistory(){
         filterNew.limit = pagination.pageSize;
         switch (sorter.field){
             case 'datetime':
-                filterNew.datetime_sorter = (sorter.order == undefined) ? null : sorter.order;
-                filterNew.solving_time_sorter = null;
+                filterNew.datetime_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                filterNew.solving_time_sorter = '';
                 break;
             case 'solving_time':
-                filterNew.solving_time_sorter = (sorter.order == undefined) ? null : sorter.order;
-                filterNew.datetime_sorter = null;
+                filterNew.solving_time_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                filterNew.datetime_sorter = '';
                 break;
             default:
                 break;

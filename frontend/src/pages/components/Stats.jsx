@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import {NavLink, useParams} from "react-router-dom"
+import dayjs from 'dayjs';
+import {NavLink, useParams, useLocation, useNavigate } from "react-router-dom"
 import {DatePicker} from 'antd'
 import Chart from 'react-apexcharts'
 import styles from '../styles/Stats.module.css'
@@ -14,12 +15,26 @@ export default function Stats(){
 
     var {id} = useParams();
 
+    const navigate = useNavigate();
+
+    const query = new URLSearchParams(useLocation().search);
+
     const [displayData, setDisplayData] = useState({
         display: false,
         viewer_role: '',
         first_name: '',
         last_name: ''
     });
+
+    const [series, setSeries] = useState({
+        correct: [0, 0, 0, 0],
+        not_correct: [0, 0, 0, 0]
+    })
+
+    const [filter, setFilter] = useState({
+        start_datetime: '',
+        end_datetime: ''
+    })
 
     useEffect(() => {
         const access = async () => {
@@ -38,15 +53,31 @@ export default function Stats(){
                                                 last_name: result.data.user.last_name});
         };
         access();
+        var filterNew = {...filter};
+        filterNew.start_datetime = query.get('start_datetime') == null ? '' : query.get('start_datetime');
+        filterNew.end_datetime = query.get('end_datetime') == null ? '' : query.get('end_datetime');
+        setFilter(filterNew);
     }, []);
+
+    useEffect(() => {
+        if (displayData.display){
+            query.set('start_datetime', filter.start_datetime);
+            query.set('end_datetime', filter.end_datetime);
+            navigate('?' + query.toString());
+            instance.get(`/personal/graph-stats?userId=${id}&${query.toString()}`).then(res => {
+                if (res.data.status == 200)
+                    setSeries(res.data.series);
+            });
+        }
+    }, [displayData, filter])
 
     let state = { 
         series: [{
             name: 'Верно',
-            data: [44, 55, 41, 37]
+            data: series.correct
         }, {
             name: 'Неверно',
-            data: [53, 32, 33, 52]
+            data: series.not_correct
         }],
         options: {
             chart: {
@@ -196,12 +227,21 @@ export default function Stats(){
                     <div className={styles.main}>
                         <div className={styles.graph}>
                             <Chart options={state.options} series={state.series} type="bar" width={750} height={300}/>
-                            <DatePicker.RangePicker showToday={true} allowEmpty={[true, true]}/>
+                            <DatePicker.RangePicker showToday={true} allowEmpty={[true, true]} onChange={(date, dateString) => {
+                                        var datetimeFilter = {...filter};
+                                        datetimeFilter.start_datetime = dateString[0];
+                                        datetimeFilter.end_datetime = dateString[1];
+                                        setFilter(datetimeFilter)
+                                    }
+                                }
+                                defaultValue={[filter.start_datetime == '' ? '' : dayjs(filter.start_datetime, 'YYYY-MM-DD'),
+                                               filter.end_datetime == '' ? '' : dayjs(filter.end_datetime, 'YYYY-MM-DD')]}/>
                         </div>
+                        {/*
                         <div className={styles.homeworks_content}>
                             <div style={{textAlign: 'center', marginBottom: '10px'}}>Прогресс домашнего задания</div>
                             {homeworks}
-                        </div>
+                            </div> */}
                     </div>
                 </> : <div>You can't access to this information</div>
             }
