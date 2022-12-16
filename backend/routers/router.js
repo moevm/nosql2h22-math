@@ -316,11 +316,29 @@ router.post("/classes", async (req, res) => {
 
 // join to class as a pupil
 router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
-	const classId = req.params.id;
-	// const userId = req.session.userId;
-	// res.status(401).send("Log in as a pupil to proceed")
-	// res.status(409).send("Pupil already present in a class")
-	res.json({message: "Ok"});
+	await pushLog(LOG_LEVEL.debug, `POST ${req.url} with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`query: ${JSON.stringify(req.query)}`);
+	const classId = ObjectId(req.params.id);
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	if(userRole !== "pupil") {
+		await pushLog(LOG_LEVEL.warning, `${req.url}: User role is "${userRole}" instead of "pupil"`);
+		res.json({status: 401, message: "Log in as a pupil to proceed"});
+		return;
+	}
+	const classToEnter = await schema.classes.findOne({_id: classId});
+	if(!classToEnter) {
+		await pushLog(LOG_LEVEL.warning, `${req.url}: No class to enter`);
+		res.json({status: 404, message: "Class not found (wrong link or class was deleted)"});
+		return;
+	}
+	if(classToEnter.members.indexOf(userId) !== -1) {
+		await pushLog(LOG_LEVEL.warning, `${req.url}: Pupil already in class`);
+		res.json({status: 409, message: "Pupil already present in class"});
+		return;
+	}
+	await schema.classes.updateOne({_id: classId}, {$push: {members: userId}});
+	res.json({status: 200, message: "Ok"});
 });
 
 // get statistics for all students in a class (Class Page)
