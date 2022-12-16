@@ -90,8 +90,8 @@ export default function Task(){
 
     const handleClickClear = (event) => {
         setTask({ ...task, user_answer: "", input_color: "primary"});
-        /*instance.post('/add_action', {action: 'Нажатие кнопки',
-                                      content: `Очистка поля ввода ответа на задание`}); */
+        instance.post('/add_action', {action: 'Нажатие кнопки',
+                                      content: `Очистка поля ввода ответа на задание`});
     };
 
     const handleChangeCategory = (e) => {
