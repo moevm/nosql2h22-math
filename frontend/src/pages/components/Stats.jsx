@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import {NavLink, useParams, useLocation, useNavigate } from "react-router-dom"
-import {DatePicker} from 'antd'
-import Chart from 'react-apexcharts'
-import styles from '../styles/Stats.module.css'
-import nav_styles from '../styles/Navigation.module.css'
+import {NavLink, useParams, useLocation, useNavigate} from "react-router-dom";
+import {DatePicker} from 'antd';
+import Chart from 'react-apexcharts';
+import styles from '../styles/Stats.module.css';
+import nav_styles from '../styles/Navigation.module.css';
 
 export default function Stats(){
     const instance = axios.create({
@@ -29,12 +29,12 @@ export default function Stats(){
     const [series, setSeries] = useState({
         correct: [0, 0, 0, 0],
         not_correct: [0, 0, 0, 0]
-    })
+    });
 
     const [filter, setFilter] = useState({
         start_datetime: '',
         end_datetime: ''
-    })
+    });
 
     useEffect(() => {
         const access = async () => {
@@ -69,7 +69,7 @@ export default function Stats(){
                     setSeries(res.data.series);
             });
         }
-    }, [displayData, filter])
+    }, [displayData, filter]);
 
     let state = { 
         series: [{
@@ -175,7 +175,7 @@ export default function Stats(){
          tasks: [{categories: ['сложение', 'вычитание', 'умножение', 'деление'],
                   count: 10,
                   progress: 10}]}
-    ]
+    ];
 
     let homeworks = <div>
                         {homeworks_history_response.map(homework => (

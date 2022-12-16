@@ -102,7 +102,7 @@ export default function Task(){
             setCategories(newCategories);
             instance.post('/add_action', {action: 'Смена категорий',
                                           content: `Изменение категорий на [${categoriesToArray(newCategories).join(", ")}]`});
-        }
+        };
     };
 
     useEffect(() => {
@@ -112,7 +112,7 @@ export default function Task(){
                                       content: res.data.content,
                                       correct_answer: String(res.data.correct_answer),
                                       was_resolved: false,
-                                      input_color: "primary"}))
+                                      input_color: "primary"}));
     }, [categories]);
 
     const handleSubmit = async () => {
@@ -135,11 +135,11 @@ export default function Task(){
             if (response.data.verdict === "correct"){
                 setTask({ ...task, input_color: "success", was_resolved: true});
             } else setTask({ ...task, input_color: "error"});
-        }
-    }
+        };
+    };
 
     const moveForward = async () => {
-        const res = await instance.get(`/task?categories=${categoriesToArray(categories).join(" ")}`)
+        const res = await instance.get(`/task?categories=${categoriesToArray(categories).join(" ")}`);
         setTask({...task, id: res.data._id,
                           content: res.data.content,
                           correct_answer: String(res.data.correct_answer),
