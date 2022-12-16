@@ -527,16 +527,6 @@ router.get("/test/init", async (req, res) => {
 	res.json({message: "Ok"});
 });
 
-// log user action on front-end
-router.post("/history", async (req, res) => {
-	const userId = req.query.userId;
-	if(!userId) {
-		res.json({status: 401, message: "Log in to proceed"});
-		return;
-	}
-	res.json({status: 418, message: "Not implemented"});
-});
-
 // get history by...
 router.get("/history", async (req, res) => {
 	const startDatetime = req.query.start_datetime;
@@ -600,20 +590,40 @@ router.get("/logs", async (req, res) => {
 	const sortByDateTime = req.query.sortByDateTime; // null | "asc" | "desc"
 	const logLevels = req.query.logLevels;
 	const messageText = req.query.message;
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("User must be an administrator")
-	res.json({log: "comes here"});
-	/*
-	[
-		{
-			datetime: "2022-11-15T06:31:15.000Z",
-			level: "DEBUG",
-			message: "..."
-		},
-		...
-	]
-	 */
+	const startDatetime = req.query.start_datetime;
+	const endDatetime = req.query.end_datetime;
+	const page = Number(req.query.page);
+	const limit = Number(req.query.limit);
+	var filter = {};
+	if ((startDatetime != '') && (endDatetime == ''))
+		filter["timestamp"] = {$gte: (new Date(startDatetime))}
+	if ((endDatetime != '') && (startDatetime == ''))
+		filter["timestamp"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	if ((startDatetime != '') && (endDatetime != ''))
+		filter["timestamp"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	
+	const logsCount = (await schema.logs.aggregate([
+		{$match: {}},
+		{$project: {'_id': 0,
+					'timestamp': '$timestamp',
+				    'level': '$level',
+					'content': '$content',}},
+		{$match: filter}
+	])).length;
+	if (req.cookies.userRole !== "administrator"){
+		res.json({status: 403, message: "User must be an administrator"});
+		return;
+	};
+	const result = await schema.logs.aggregate([
+		{$match: {}},
+		{$project: {'_id': 0,
+					'timestamp': '$timestamp',
+				    'level': '$level',
+					'content': '$content'}},
+		{$match: filter},
+		{$sort: {'timestamp': -1}}
+	]).skip((page - 1) * limit).limit(limit);
+	res.json({status: 200, logs: result, totalElements: logsCount});
 });
 
 // fallback
