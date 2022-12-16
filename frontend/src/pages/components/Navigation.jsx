@@ -18,6 +18,7 @@ export default function Navigation({navTrigger, setNavTrigger}) {
     };
 
     const [user, setUser] = useState({
+        id: "",
         firstName: "",
         lastName: "",
         role: ""
@@ -25,14 +26,16 @@ export default function Navigation({navTrigger, setNavTrigger}) {
 
     useEffect(() => {instance.get("/whoami")
                              .then(res => (res.data != null) ?
-                                          setUser({firstName: res.data.first_name,
+                                          setUser({id: res.data._id,
+                                                   firstName: res.data.first_name,
                                                    lastName: res.data.last_name,
                                                    role: res.data.role}) :
                                           null)}, [navTrigger]);
     
     const logoutUser = async() => {
         await instance.get("/logout");
-        setUser({firstName: "",
+        setUser({id: "",
+                 firstName: "",
                  lastName: "",
                  role: ""});
         navigate("/login");
@@ -51,12 +54,12 @@ export default function Navigation({navTrigger, setNavTrigger}) {
                             isActive ? activeStyle : undefined
                             }>Задачи</NavLink>
                         <NavLink
-                            to="/stats"
+                            to={"/stats/" + user.id}
                             style={({ isActive }) =>
                             isActive ? activeStyle : undefined
                             }>Статистика</NavLink>
                         <NavLink
-                            to="/user_history"
+                            to={"/user_history/" + user.id}
                             style={({ isActive }) =>
                             isActive ? activeStyle : undefined
                             }>История</NavLink>

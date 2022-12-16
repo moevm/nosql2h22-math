@@ -162,42 +162,104 @@ router.get("/personal/last-categories", async (req, res) => {
 });
 
 // get attempts for a user filtered by...
-router.get("/personal/attempts",
-	async (req, res) => {
-		// const userId = req.session.userId;
-		const requestedUserId = req.query.userId; // если запрос со стороны учителя, то userId !== requestedUserId
-		const sortByDatetime = req.query.sortByDatetime; // "asc" | "desc" | null
-		const sortBySolvingTime = req.query.sortBySolvingTime; // "asc" | "desc" | null
-		const taskContent = req.query.taskContent;
-		const categories = req.query.categories;
-		const answer = req.query.answer;
-		const verdict = req.query.verdict; // null | "correct" | "not correct" | "in progress"
-		// res.status(400).send(`${something} is not ${some_type}`)
-		// res.status(401).send("Log in to proceed")
-		// res.status(403).send("Requested pupil is not in any of this teacher's classes")
-		res.json({
-			attempts: [
-				{
-					datetime: "2022-11-15T06:31:15.000Z",
-					taskContent: "16x3-17",
-					categories: ["subtraction", "multiplication"],
-					solvingTime: "1970-01-01T00:01:02.000Z",
-					answer: 42,
-					verdict: false
-				},
-				{
-					datetime: "2022-11-15T09:25:00.000Z",
-					taskContent: "82-65-11",
-					categories: ["subtraction"],
-					solvingTime: "1970-01-01T00:00:42.000Z",
-					answer: 6,
-					verdict: true
-				}
-			],
-			correct: 1,
-			wrong: 1
-		});
-	});
+router.get("/personal/attempts", async (req, res) => {
+	const userId = req.query.userId;
+	const page = Number(req.query.page);
+	const limit = Number(req.query.limit);
+	const startDatetime = req.query.start_datetime;
+	const endDatetime = req.query.end_datetime;
+	const requestedUserId = req.query.userId; // если запрос со стороны учителя, то userId !== requestedUserId
+	const sortByDatetime = req.query.sortByDatetime; // "asc" | "desc" | null
+	const sortBySolvingTime = req.query.sortBySolvingTime; // "asc" | "desc" | null
+	const taskContent = req.query.taskContent;
+	const categories = req.query.categories;
+	const answer = req.query.answer;
+	const verdict = req.query.verdict; // null | "correct" | "not correct" | "in progress"
+	// res.status(400).send(`${something} is not ${some_type}`)
+	// res.status(401).send("Log in to proceed")
+	// res.status(403).send("Requested pupil is not in any of this teacher's classes")
+	const taskIds = (await schema.users.findOne({"_id": ObjectId(userId)}, {"_id": 0, "tasks": 1})).tasks;
+	var filter = {}
+	if ((startDatetime != '') && (endDatetime == ''))
+		filter["datetime"] = {$gte: (new Date(startDatetime))}
+	if ((endDatetime != '') && (startDatetime == ''))
+		filter["datetime"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	if ((startDatetime != '') && (endDatetime != ''))
+		filter["datetime"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	const attemptsCount = (await schema.tasks.aggregate([
+		{$match: {'_id': {$in: taskIds}}},
+		{$unwind: {'path': '$attempts'}},
+		{$match: {'attempts.status': {$in: ["correct", "not correct"]}}},
+		{$project: {'_id': 0,
+		            'datetime': '$attempts.end_timestamp',
+				    'taskContent': '$content',
+					'categories': '$categories',
+				    'solvingTime': {$subtract: ['$attempts.end_timestamp', '$attempts.start_timestamp']},
+					'answer': '$attempts.user_answer',
+					'verdict': '$attempts.status'}},
+		{$match: filter}])).length;
+	const attempts = await schema.tasks.aggregate([
+		{$match: {'_id': {$in: taskIds}}},
+		{$unwind: {'path': '$attempts'}},
+		{$match: {'attempts.status': {$in: ["correct", "not correct"]}}},
+		{$project: {'_id': 0,
+		            'datetime': '$attempts.end_timestamp',
+				    'taskContent': '$content',
+					'categories': '$categories',
+				    'solvingTime': {$subtract: ['$attempts.end_timestamp', '$attempts.start_timestamp']},
+					'answer': '$attempts.user_answer',
+					'verdict': '$attempts.status'}},
+		{$match: filter},
+		{$sort: {'datetime': -1}}
+	]).skip((page - 1) * limit).limit(limit);
+	res.json({attempts: attempts, totalElements: attemptsCount, status: 200});
+});
+
+router.get("/personal/graph-stats", async (req, res) => {
+	const userId = req.query.userId;
+	const startDatetime = req.query.start_datetime;
+	const endDatetime = req.query.end_datetime;
+	const taskIds = (await schema.users.findOne({_id: ObjectId(userId)}, {"_id": 0, "tasks": 1})).tasks;
+	if (!taskIds) {
+		res.json({status: 400, message: `User with id=${requestedId} not found`});
+		return;
+	}
+	var filter = {
+		"verdict": {$in: ["correct", "not correct"]}
+	}
+	
+	if ((startDatetime != '') && (endDatetime == ''))
+		filter["end_datetime"] = {$gte: (new Date(startDatetime))}
+	if ((endDatetime != '') && (startDatetime == ''))
+		filter["end_datetime"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	if ((startDatetime != '') && (endDatetime != ''))
+		filter["end_datetime"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	console.log(filter)
+	const attempts = await schema.tasks.aggregate([
+		{$match: {'_id': {$in: taskIds}}},
+		{$unwind: {'path': '$attempts'}},
+		{$project: {"_id": 0,
+					"categories":"$categories",
+					"start_datetime": "$attempts.start_timestamp",
+					"end_datetime": "$attempts.end_timestamp",
+					"verdict": "$attempts.status"}},
+		{$match: filter},
+		{$unwind: {'path': '$categories'}},
+		{$project: {"category": "$categories", "verdict": "$verdict"}}
+	]);
+	var resObject = {
+		addition: [0, 0],
+		subtraction: [0, 0],
+		multiplication: [0, 0],
+		division: [0, 0]
+	};
+	attempts.map(res => res.verdict == "correct" ? resObject[res.category][0]++ : resObject[res.category][1]++);
+	const result = {series: {correct: [resObject.addition[0], resObject.subtraction[0], resObject.multiplication[0], resObject.division[0]],
+				    		 not_correct: [resObject.addition[1], resObject.subtraction[1], resObject.multiplication[1], resObject.division[1]]
+					},
+				    status: 200};
+	res.json(result);
+})
 
 // publish new homework
 router.post("/classes/homeworks", async (req, res) => {
@@ -359,6 +421,42 @@ router.get("/remember-me", (req, res) => {
 	res.json({message: "Ok"});
 });
 
+router.get("/access-to-user", async (req, res) => {
+	const requestedId = req.query.requested;
+	const requesterRole = req.cookies.userRole;
+	if (!requestedId){
+		res.json({status: 401, message: "Not enough information"});
+		return;
+	}
+	if (requestedId.length != 24){
+		res.json({status: 401, message: "Non-supportable id format"});
+		return;
+	}
+	const requestedUser = await schema.users.findOne({_id: ObjectId(requestedId)});
+	if (!requestedUser){
+		res.json({status: 400, message: `User with id=${requestedId} not found`});
+		return;
+	};
+	if (requesterRole === "administrator"){
+		res.json({
+			status: 200,
+			user: requestedUser,
+			requesterRole: req.cookies.userRole
+		});
+		return;
+	};
+	const requestedUserRole = requestedUser.role;
+	if ((requesterRole === "pupil") || (requestedUserRole !== "pupil")){
+		res.json({status: 403, message: "Access denied"})
+		return;
+	};
+	res.json({
+		status: 200,
+		user: requestedUser,
+		requesterRole: req.cookies.userRole
+	});
+});
+
 router.get("/whoami", async (req, res) => {
 	const userId = req.cookies.userId;
 	if(userId === undefined) {
@@ -405,29 +503,46 @@ router.get("/test/init", async (req, res) => {
 
 // get history by...
 router.get("/history", async (req, res) => {
-	const emailText = req.query.email;
-	const userId = req.query.userId;
-	const sortByDateTime = req.query.sortByDateTime; // null | "asc" | "desc"
-	const role = req.query.role; // null | "pupil" | "teacher"
-	const actionText = req.query.action;
-	const messageText = req.query.message;
+	const startDatetime = req.query.start_datetime;
+	const endDatetime = req.query.end_datetime;
+	const page = Number(req.query.page);
+	const limit = Number(req.query.limit);
+	var filter = {};
+	if ((startDatetime != '') && (endDatetime == ''))
+		filter["timestamp"] = {$gte: (new Date(startDatetime))}
+	if ((endDatetime != '') && (startDatetime == ''))
+		filter["timestamp"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	if ((startDatetime != '') && (endDatetime != ''))
+		filter["timestamp"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	// const adminId = req.session.userId;
 	// res.status(400).send(`${something} is not ${some_type}`)
 	// res.status(401).send("Log in to proceed")
 	// res.status(403).send("User must be an administrator")
-	res.json({history: "comes here"});
-	/*
-	[
-		{
-			datetime: "2022-11-15T06:31:15.000Z",
-			email: "fedorov.f@example.com",
-			role: "pupil",
-			action: "Вход",
-			message: "..."
-		},
-		...
-	]
-	 */
+	const historyCount = (await schema.users.aggregate([
+		{$match: {}},
+		{$unwind: {'path': '$history'}},
+		{$project: {'_id': 0,
+					'timestamp': '$history.timestamp',
+				    'login': '$email',
+					'role': '$role',
+					'action': '$history.action',
+					'content': '$history.content'}},
+		{$match: filter}
+	])).length;
+
+	const result = await schema.users.aggregate([
+		{$match: {}},
+		{$unwind: {'path': '$history'}},
+		{$project: {'_id': 0,
+					'timestamp': '$history.timestamp',
+				    'login': '$email',
+					'role': '$role',
+					'action': '$history.action',
+					'content': '$history.content'}},
+		{$match: filter},
+		{$sort: {'timestamp': -1}}
+	]).skip((page - 1) * limit).limit(limit);
+	res.json({history: result, totalElements: historyCount, status: 200});
 });
 
 // get logs by...
