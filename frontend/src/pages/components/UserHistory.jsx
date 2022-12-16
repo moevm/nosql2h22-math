@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { NavLink, useParams, useLocation, useNavigate } from "react-router-dom";
+import {NavLink, useParams, useLocation, useNavigate} from "react-router-dom";
 import {SearchOutlined, FilterFilled} from '@ant-design/icons';
 import {Button, Checkbox, Col, Row, DatePicker, Table} from 'antd';
 import nav_styles from '../styles/Navigation.module.css';
@@ -128,7 +128,6 @@ export default function PupilHistory(){
                         if (res.data.status == 200)
                             responseToDataSource(res.data)
                     });
-            
         }}, [filter, displayData]);
 
     const handleCategories = (prop) => (list) => {
