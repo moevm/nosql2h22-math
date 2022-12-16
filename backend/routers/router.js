@@ -341,6 +341,49 @@ router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 	res.json({status: 200, message: "Ok"});
 });
 
+// delete pupil from class
+router.post("/classes/:id([0-9a-f]+)/delete-pupil", async (req, res) => {
+	await pushLog(LOG_LEVEL.debug, `POST ${req.url} with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`body: ${JSON.stringify(req.body)}, query: ${JSON.stringify(req.query)}`);
+	const classId = ObjectId(req.params.id);
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	const deletedUserId = ObjectId(req.body.userId);
+	if(userRole !== "teacher") {
+		await pushLog(LOG_LEVEL.warning, `${req.url}: User role is "${userRole}" instead of "pupil"`);
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const classToEdit = await schema.classes.findOne({_id: classId});
+	if(!classToEdit) {
+		await pushLog(LOG_LEVEL.warning, `${req.url}: No class to edit`);
+		res.json({status: 404, message: "Class not found (wrong link or class was deleted)"});
+		return;
+	}
+	if(classToEdit.members.indexOf(deletedUserId) === -1) {
+		await pushLog(LOG_LEVEL.warning, `User #${deletedUserId} is not in class`);
+		res.json({status: 409, message: "User not found in class"});
+		return;
+	}
+	const deletedUser = await schema.users.findOne({_id: deletedUserId});
+	if(!deletedUser || deletedUser.role !== "pupil") {
+		await pushLog(LOG_LEVEL.warning, `User #${deletedUserId} is not a valid pupil`);
+		res.json({status: 409, message: "Invalid pupil to delete"});
+		return;
+	}
+	const deletedUserIdPos = classToEdit.members.indexOf(deletedUserId);
+	if(deletedUserIdPos === -1) {
+		await pushLog(LOG_LEVEL.warning, `User that is requesting pupil deletion does not own the class`);
+		res.json({status: 403, message: "Requesting user does not own the class"});
+		return;
+	}
+	await pushLog(LOG_LEVEL.finest, `Before deletion: ${await schema.classes.findOne({_id: classId})}`);
+	classToEdit.members.splice(deletedUserIdPos, 1);
+	await classToEdit.save();
+	await pushLog(LOG_LEVEL.finest, `After deletion: ${await schema.classes.findOne({_id: classId})}`);
+	res.json({status: 200, message: "Deleted"});
+});
+
 // get statistics for all students in a class (Class Page)
 router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 	const classId = req.params.id;
