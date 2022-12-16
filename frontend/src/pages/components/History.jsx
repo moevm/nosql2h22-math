@@ -225,7 +225,11 @@ export default function History(){
 
     return (
     <>
-        <Table dataSource={dataSource} columns={columns} pagination={{total: totalElements, showQuickJumper: true}} onChange={handleChangeFilters} />
+        {
+            display ?
+                <Table dataSource={dataSource} columns={columns} pagination={{total: totalElements, showQuickJumper: true}} onChange={handleChangeFilters} /> :
+                <div>You can't access to this information</div>
+        }
     </>  
     )
 }
