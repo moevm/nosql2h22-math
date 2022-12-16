@@ -545,6 +545,19 @@ router.get("/history", async (req, res) => {
 	res.json({history: result, totalElements: historyCount, status: 200});
 });
 
+router.post("/add_action", async (req, res) => {
+	const userId = req.cookies.userId;
+	const action = req.body.action;
+	const content = req.body.content;
+	if (userId == undefined){
+		return;
+	}
+	await schema.users.updateOne({"_id": ObjectId(userId)},
+						         {$push: {"history": {'timestamp': Date.now(), 'action': action, 'content': content}
+	}});
+	res.json({})
+});
+
 // get logs by...
 router.get("/logs", async (req, res) => {
 	// const adminId = req.session.userId;
