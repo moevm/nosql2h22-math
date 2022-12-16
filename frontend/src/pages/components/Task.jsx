@@ -10,6 +10,13 @@ export default function Task(){
         withCredentials: true,
     });
 
+    const [homeworks, setHomeworks] = useState(<></>);
+
+    const [pupilInfo, setPupil] = useState({
+        isPupil: false,
+        pupilId: ''
+    });
+
     const [categories, setCategories] = useState({
         addition: true,
         subtraction: true,
@@ -27,56 +34,14 @@ export default function Task(){
     });
 
     useEffect(() => {
-        instance.post('/add_action', {action: 'Открытие страницы',
-                                      content: `Открыта страница "Задачи"`});
+        const init = async() => {
+            const user = await instance.get('/whoami');
+            console.log(user.data)
+            if (user.data && user.data.role == "pupil")
+                setPupil({isPupil: true, pupilId: user.data._id});
+        }
+        init();
     }, []);
-
-    var role = "pupil";
-
-    var current_homeworks_response = [
-        {deadline_timestamp: "11 января 2023",
-         tasks: [{categories: ['сложение', 'умножение'],
-                  count: 10,
-                  progress: 9},
-                 {categories: ['вычитание', 'умножение', 'деление'],
-                  count: 5,
-                  progress: 5},
-                 {categories: ['сложение'],
-                  count: 15,
-                  progress: 3}]},
-        {deadline_timestamp: "13 января 2023",
-         tasks: [{categories: ['сложение'],
-                  count: 30,
-                  progress: 21},
-                 {categories: ['вычитание', 'деление'],
-                  count: 5,
-                  progress: 3}]},
-        {deadline_timestamp: "15 января 2023",
-         tasks: [{categories: ['сложение', 'вычитание', 'умножение', 'деление'],
-                  count: 10,
-                  progress: 5}]}
-    ];
-
-    var i = 0;
-
-    var homeworks = <></>;
-
-    if (role === "pupil")
-        homeworks = <div className={styles.homeworks}>
-                        {current_homeworks_response.map(homework => (
-                        <div key={i++} className={styles.homework}>
-                            <div className={styles.title}>
-                                <div>Домашнее задание</div>
-                                <div>До {homework.deadline_timestamp}</div>
-                            </div>
-                            <ol>
-                                {homework.tasks.map(task =>
-                                    <li key={i++}>{task.categories.join(" и ") + " - " + task.progress + "/" + task.count}</li>
-                                )}
-                            </ol>
-                        </div>
-                        ))}
-                    </div>
     
     const categoriesToArray = (categoriesObject) => {
         var result = [];
@@ -90,8 +55,9 @@ export default function Task(){
 
     const handleClickClear = (event) => {
         setTask({ ...task, user_answer: "", input_color: "primary"});
-        instance.post('/add_action', {action: 'Нажатие кнопки',
-                                      content: `Очистка поля ввода ответа на задание`});
+        if (pupilInfo.isPupil)
+            instance.post('/add_action', {action: 'Нажатие кнопки',
+                                        content: `Очистка поля ввода ответа на задание`});
     };
 
     const handleChangeCategory = (e) => {
@@ -100,8 +66,9 @@ export default function Task(){
         newCategories[category] = !newCategories[category];
         if (Object.values(newCategories).some(val => val)){
             setCategories(newCategories);
-            instance.post('/add_action', {action: 'Смена категорий',
-                                          content: `Изменение категорий на [${categoriesToArray(newCategories).join(", ")}]`});
+            if (pupilInfo.isPupil)
+                instance.post('/add_action', {action: 'Смена категорий',
+                                              content: `Изменение категорий на [${categoriesToArray(newCategories).join(", ")}]`});
         };
     };
 
@@ -115,9 +82,43 @@ export default function Task(){
                                       input_color: "primary"}));
     }, [categories]);
 
+    const getHometasks = async() => {
+        const homeworks_response = await instance.get(`/homeworks?userId=${pupilInfo.pupilId}&type=in-progress`);
+        console.log(homeworks_response);
+        if (homeworks_response.data.status == 200){
+            var homeworks_list = homeworks_response.data.homeworks;
+            let i = 0;
+            const result = <div className={styles.homeworks}>
+                            {homeworks_list.map(homework => (
+                            <div key={i++} className={styles.homework}>
+                                <div className={styles.title}>
+                                    <div>Домашнее задание</div>
+                                    <div>От {`${homework.created_timestamp.substring(0, 10)} ${homework.created_timestamp.substring(11, 19)}`}</div>
+                                    <div>До {`${homework.deadline_timestamp.substring(0, 10)} ${homework.deadline_timestamp.substring(11, 19)}`}</div>
+                                </div>
+                                <ol>
+                                    {homework.tasks.map(task =>
+                                        <li key={i++} onClick={() => {
+                                            setCategories({
+                                                addition: task.categories.indexOf("addition") > -1,
+                                                subtraction: task.categories.indexOf("subtraction") > -1,
+                                                multiplication: task.categories.indexOf("multiplication") > -1,
+                                                division: task.categories.indexOf("division") > -1,
+                                            })
+                                        }}>{task.categories.join(" и ") + " - " + task.progress + "/" + task.count}</li>
+                                    )}
+                                </ol>
+                            </div>
+                            ))}
+                        </div>
+            setHomeworks(result)
+        }
+    }
+
     const handleSubmit = async () => {
-        instance.post('/add_action', {action: 'Отправка ответа',
-                                      content: `Был отправлен ответ "${task.user_answer}" на задание ${task.content}`});
+        if (pupilInfo.isPupil)
+            instance.post('/add_action', {action: 'Отправка ответа',
+                                          content: `Был отправлен ответ "${task.user_answer}" на задание ${task.content}`});
         if (task.was_resolved){
             (task.user_answer === task.correct_answer) ? setTask({ ...task, input_color: "success"}) :
                                                          setTask({ ...task, input_color: "error"});
@@ -134,6 +135,8 @@ export default function Task(){
 
             if (response.data.verdict === "correct"){
                 setTask({ ...task, input_color: "success", was_resolved: true});
+                if (pupilInfo.isPupil)
+                    getHometasks();
             } else setTask({ ...task, input_color: "error"});
         };
     };
@@ -146,14 +149,23 @@ export default function Task(){
                           was_resolved: false,
                           input_color: "primary",
                           user_answer: ""});
-        instance.post('/add_action', {action: 'Генерация задания',
-                                      content: `Получено задание ${res.data.content} с категориями [${categoriesToArray(categories).join(", ")}]`});
+        if (pupilInfo.isPupil)
+            instance.post('/add_action', {action: 'Генерация задания',
+                                          content: `Получено задание ${res.data.content} с категориями [${categoriesToArray(categories).join(", ")}]`});
     };
 
     const handleKeypress = e => {
         if (e.key == "Enter") handleSubmit();
         else setTask({ ...task, input_color: "primary"});
     };
+
+    useEffect(() => {
+        if (pupilInfo.isPupil){
+            instance.post('/add_action', {action: 'Открытие страницы',
+                                          content: `Открыта страница "Задачи"`});
+            getHometasks();
+        }
+    }, [pupilInfo]);
 
     return (
         <>
