@@ -285,6 +285,65 @@ router.post("/classes/homeworks", async (req, res) => {
 	res.json({status: 201, message: "Created"});
 });
 
+router.get("/homeworks", async (req, res) => {
+	const requestedId = req.query.userId;
+	const requestedClass = req.query.classId;
+	const type = req.query.type;
+	var response;
+	if (requestedId !== undefined){
+		response = await schema.classes.findOne({"members": ObjectId(requestedId)}, {"_id": 0, "homeworks": 1});
+	} else if (requestedClass !== undefined){
+		response = await schema.classes.findOne({"_id": ObjectId(requestedClass)}, {"_id": 0, "homeworks": 1});
+	} else {
+		res.json({status: 403, message: "Wrong arguments"});
+		return;
+	};
+	if (response == null){
+		res.json({status: 200, homeworks: []});
+		return;
+	}
+	homeworkIds = response.homeworks;
+	const homeworks = await schema.homeworks.aggregate([
+		{$match: {"_id": {$in: homeworkIds}}},
+		{$match: type == "in-progress" ? {"deadline_timestamp": {$gte: (new Date())}} : {}},
+		{$project: {'created_timestamp': '$created_timestamp',
+					'deadline_timestamp': '$deadline_timestamp',
+					'tasks': '$tasks'}},
+		{$addFields: {status: {"$cond": {
+			if: {$gte: ["$deadline_timestamp", (new Date())]},
+			then: "in-progress",
+			else: "completed"
+		}}}},
+		{$sort: {'deadline_timestamp': type == "in-progress" ? 1 : -1}}
+	]);
+
+	if (requestedId !== undefined){
+		const taskIds = (await schema.users.findOne({"_id": ObjectId(requestedId)}, {"_id": 0, "tasks": 1})).tasks;
+		for (let i = 0; i < homeworks.length; i++){
+			const attempts = (await schema.tasks.aggregate([
+				{$match: {'_id': {$in: taskIds}}},
+				{$unwind: {'path': '$attempts'}},
+				{$match: {'attempts.status': "correct"}},
+				{$project: {'_id': 0,
+							'datetime': '$attempts.end_timestamp',
+							'categories': '$categories'}},
+				{$match: {'datetime': {$gte: (new Date(homeworks[i].created_timestamp)), $lte: (new Date(homeworks[i].deadline_timestamp))}}},
+				{$project: {'categories': '$categories'}}
+			])).map(obj => obj.categories);
+			console.log(attempts);
+			for (let j = 0; j < homeworks[i].tasks.length; j++){
+				homeworks[i].tasks[j].progress = 0;
+				for (let k = 0; k < attempts.length; k++){
+					homeworks[i].tasks[j].categories.every(category => {return attempts[k].includes(category)}) ? homeworks[i].tasks[j].progress++ : null;
+				}
+				(homeworks[i].tasks[j].progress < homeworks[i].tasks[j].count) && (homeworks[i].status == "completed") ? homeworks[i].status = "failed" : null;
+			}
+		}
+	}
+	res.json({status: 200, homeworks: homeworks});
+	return;
+})
+
 // add a class
 router.post("/classes", async (req, res) => {
 	const className = req.body.className;
