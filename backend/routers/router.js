@@ -287,11 +287,31 @@ router.post("/classes/homeworks", async (req, res) => {
 
 // add a class
 router.post("/classes", async (req, res) => {
+	await pushLog(LOG_LEVEL.debug, `POST /classes with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`body: ${JSON.stringify(req.body)}, ` +
+		`query: ${JSON.stringify(req.query)}`);
 	const className = req.body.className;
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in as a teacher to proceed")
-	// res.status(409).send(`Class named "${className}" already exists`)
-	res.json({status: 201, classId: "goes here"});
+	const userId = req.cookies.userId;
+	const userRole = req.cookies.userRole;
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const existingClass = await schema.classes.findOne({title: className});
+	await pushLog(LOG_LEVEL.debug, `Tried to find class with name ${className}, got ${existingClass}`);
+	if(existingClass) {
+		res.json({status: 409, message: `Class named "${className}" already exists`});
+		return;
+	}
+	const newClass = new schema.classes({
+		title: className,
+		members: [ObjectId(userId)],
+		homeworks: []
+	});
+	await newClass.save();
+	const createdClass = await schema.classes.findOne({title: className});
+	await pushLog(LOG_LEVEL.debug, `Created class: ${createdClass}`);
+	res.json({status: 201, classId: createdClass._id.toString(), message: "Created"});
 });
 
 // join to class as a pupil
