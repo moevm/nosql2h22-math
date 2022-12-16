@@ -7,7 +7,7 @@ import styles from '../styles/Task.module.css';
 export default function Task(){
     const instance = axios.create({
         baseURL: 'http://localhost:8000',
-        withCredentials: true
+        withCredentials: true,
     });
 
     const [categories, setCategories] = useState({
@@ -25,6 +25,11 @@ export default function Task(){
         was_resolved: false,
         input_color: "primary"
     });
+
+    useEffect(() => {
+        instance.post('/add_action', {action: 'Открытие страницы',
+                                      content: `Открыта страница "Задачи"`});
+    }, []);
 
     var role = "pupil";
 
@@ -73,9 +78,9 @@ export default function Task(){
                         ))}
                     </div>
     
-    const categoriesToArray = () => {
+    const categoriesToArray = (categoriesObject) => {
         var result = [];
-        Object.keys(categories).forEach(category => {categories[category] ? result.push(category) : null});
+        Object.keys(categoriesObject).forEach(category => {categoriesObject[category] ? result.push(category) : null});
         return result;
     };
 
@@ -85,25 +90,34 @@ export default function Task(){
 
     const handleClickClear = (event) => {
         setTask({ ...task, user_answer: "", input_color: "primary"});
+        instance.post('/add_action', {action: 'Нажатие кнопки',
+                                      content: `Очистка поля ввода ответа на задание`});
     };
 
     const handleChangeCategory = (e) => {
         var category = e.target.value;
         var newCategories = {...categories};
         newCategories[category] = !newCategories[category];
-        if (Object.values(newCategories).some(val => val))
+        if (Object.values(newCategories).some(val => val)){
             setCategories(newCategories);
+            instance.post('/add_action', {action: 'Смена категорий',
+                                          content: `Изменение категорий на [${categoriesToArray(newCategories).join(", ")}]`});
+        }
     };
 
-    useEffect(() => {instance.get(`/task?categories=${categoriesToArray().join(" ")}`)
-                             .then(res => setTask({...task,
-                                                   id: res.data._id,
-                                                   content: res.data.content,
-                                                   correct_answer: String(res.data.correct_answer),
-                                                   was_resolved: false,
-                                                   input_color: "primary"}))}, [categories]);
+    useEffect(() => {
+        instance.get(`/task?categories=${categoriesToArray(categories).join(" ")}`)
+                .then(res => setTask({...task,
+                                      id: res.data._id,
+                                      content: res.data.content,
+                                      correct_answer: String(res.data.correct_answer),
+                                      was_resolved: false,
+                                      input_color: "primary"}))
+    }, [categories]);
 
     const handleSubmit = async () => {
+        instance.post('/add_action', {action: 'Отправка ответа',
+                                      content: `Был отправлен ответ "${task.user_answer}" на задание ${task.content}`});
         if (task.was_resolved){
             (task.user_answer === task.correct_answer) ? setTask({ ...task, input_color: "success"}) :
                                                          setTask({ ...task, input_color: "error"});
@@ -124,15 +138,16 @@ export default function Task(){
         }
     }
 
-    const moveForward = () => {
-        instance.get(`/task?categories=${categoriesToArray().join(" ")}`)
-                .then(res => setTask({...task,
-                                      id: res.data._id,
-                                      content: res.data.content,
-                                      correct_answer: String(res.data.correct_answer),
-                                      was_resolved: false,
-                                      input_color: "primary"}));
-        setTask({ ...task, user_answer: ""});
+    const moveForward = async () => {
+        const res = await instance.get(`/task?categories=${categoriesToArray(categories).join(" ")}`)
+        setTask({...task, id: res.data._id,
+                          content: res.data.content,
+                          correct_answer: String(res.data.correct_answer),
+                          was_resolved: false,
+                          input_color: "primary",
+                          user_answer: ""});
+        instance.post('/add_action', {action: 'Генерация задания',
+                                      content: `Получено задание ${res.data.content} с категориями [${categoriesToArray(categories).join(", ")}]`});
     };
 
     const handleKeypress = e => {
