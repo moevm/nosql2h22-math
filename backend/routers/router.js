@@ -342,7 +342,6 @@ router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 				$in: [userId, "$members"]
 			}
 	});
-	console.log(classWithPupil);
 	if(classWithPupil) {
 		await pushLog(LOG_LEVEL.warning, `User already is in class ${classWithPupil._id}. ` +
 			`User will be silently removed from that class!`);
@@ -443,13 +442,25 @@ router.get("/classes", async (req, res) => {
 
 // delete a class
 router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
-	const classId = req.params.id;
-	// const userId = req.session.userId;
-	// res.status(400).send("Class id is not an ObjectId hex string")
-	// res.status(401).send("Log in as a teacher to proceed")
-	// res.status(403).send("Teacher must run a class to delete it")
-	// res.status(404).send("Class not found")
-	res.json({message: "Ok"});
+	await pushLog(LOG_LEVEL.debug, `${req.method} ${req.url} with ` +
+		`cookies: ${JSON.stringify(req.cookies)}, query: ${JSON.stringify(req.query)}`);
+	const classId = ObjectId(req.params.id);
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const homework_ids = (await schema.classes.findOne({'_id': classId}, {'_id': 0, 'homeworks': 1})).homeworks
+	if (homework_ids.length > 0){
+		const response = (await schema.classes.aggregate([{$unwind: '$homeworks'},
+			{$group: {'_id': '$homeworks', 'count': {$sum: 1}}},
+			{$match: {"$expr": {"$in": ["$_id", homework_ids]}, "count": 1}},
+			{$project: {'_id': 1}} ])).map(obj => obj._id)
+		await schema.homeworks.deleteMany({'_id': {$in: response}})
+	}
+	await schema.classes.deleteOne({'_id': classId})
+	res.json({message: "Deleted"});
 });
 
 // register
@@ -596,6 +607,7 @@ router.get("/logout", async (req, res) => {
 		return;
 	}
 	res.clearCookie("userId");
+	res.clearCookie("userRole");
 	res.json({message: "Ok"});
 });
 
