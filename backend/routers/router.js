@@ -277,26 +277,26 @@ router.get("/personal/graph-stats", async (req, res) => {
 
 // publish new homework
 router.post("/classes/homeworks", async (req, res) => {
-	const classIds = JSON.parse(req.body.classIds);
+	const classIds = req.body.classIds.map(id => ObjectId(id));
 	const deadline = new Date(req.body.deadline);
-	const homeworkTasks = JSON.parse(req.body.homeworkTasks);
-	const userId = req.cookies.userId;
-
-	/*
-	const class_ids = [ObjectId('637cf20192bec933530fc362'),
-                   ObjectId('637cf4044d77a3dc40b1e37b'),
-                   ObjectId('637cfef64d77a3dc40b1e3a5')]
-	const homework = new schema.homeworks({created_timestamp: Date.now(),
-                                       deadline_timestamp: Date.parse('2025-11-22T16:30:29.791+00:00'),
-                                       tasks: [{categories: ['addittion', 'subtraction'], count: 5},
-                                               {categories: ['multiplication'], count: 3},
-                                               {categories: ['addittion', 'division'], count: 8}]})
-	await homework.save()
-	await schema.classes.updateMany({'_id': {$in: class_ids}}, {$push: {'homeworks': homework._id}})
-	 */
-	// const userId = req.session.userId;
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in as a teacher to proceed")
+	const homeworkTasks = req.body.homeworkTasks;
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	console.debug(`classIds: ${classIds}\n`,
+		`deadline: ${deadline}\n`,
+		`homeworkTasks: ${homeworkTasks}\n`,
+		`userRole: ${userRole}`);
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const homework = new schema.homeworks({
+		created_timestamp: Date.now(),
+		deadline_timestamp: deadline,
+		tasks: homeworkTasks
+	});
+	await homework.save();
+	await schema.classes.updateMany({'_id': {$in: classIds}}, {$push: {'homeworks': homework._id}});
 	res.json({status: 201, message: "Created"});
 });
 
