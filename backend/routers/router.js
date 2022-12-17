@@ -337,6 +337,19 @@ router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 		res.json({status: 409, message: "Pupil already present in class"});
 		return;
 	}
+	const classWithPupil = await schema.classes.findOne({
+			$expr: {
+				$in: [userId, "$members"]
+			}
+	});
+	console.log(classWithPupil);
+	if(classWithPupil) {
+		await pushLog(LOG_LEVEL.warning, `User already is in class ${classWithPupil._id}. ` +
+			`User will be silently removed from that class!`);
+		classWithPupil.members.splice(classWithPupil.members.indexOf(userId), 1);
+		await classWithPupil.save();
+		await pushLog(LOG_LEVEL.debug, `Other class with this pupil removed: ${classWithPupil}`);
+	}
 	await schema.classes.updateOne({_id: classId}, {$push: {members: userId}});
 	res.json({status: 200, message: "Ok"});
 });
