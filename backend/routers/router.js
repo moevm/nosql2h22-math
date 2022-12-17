@@ -504,6 +504,19 @@ router.get("/classes", async (req, res) => {
 	res.json({status: 200, message: "Ok", result: result});
 });
 
+router.get("/classes-ids", async (req, res) => {
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const classes = await schema.classes.find({ $expr: {
+		$in: [userId, "$members"]
+	}});
+	res.json({status: 200, message: "Ok", data: classes.map(cls => cls._id)});
+});
+
 // delete a class
 router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 	await pushLog(LOG_LEVEL.debug, `${req.method} ${req.url} with ` +
