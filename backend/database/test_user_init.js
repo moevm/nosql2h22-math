@@ -8,7 +8,7 @@ async function initTestUsers() {
         const admin = new schema.users({
             email: "admin@nosql7.com",
             password: "admin",
-            role: "admin"
+            role: "administrator"
         });
         const pupil = new schema.users({
             email: "john.doe@example.com",
