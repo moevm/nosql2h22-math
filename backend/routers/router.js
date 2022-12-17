@@ -7,6 +7,7 @@ const schema = require('../database/schema');
 const taskGenerator = require('../task_generator');
 const pushLog = require('../push_log').pushLog;
 const LOG_LEVEL = require('../push_log').LOG_LEVEL;
+const lastPublishedHWData = require('../complex_queries').lastPublishedHWData;
 
 // export database
 router.get('/', async (req,res) => {
@@ -276,12 +277,26 @@ router.get("/personal/graph-stats", async (req, res) => {
 
 // publish new homework
 router.post("/classes/homeworks", async (req, res) => {
-	const classIds = JSON.parse(req.body.classIds);
+	const classIds = req.body.classIds.map(id => ObjectId(id));
 	const deadline = new Date(req.body.deadline);
-	const homeworkTasks = JSON.parse(req.body.homeworkTasks);
-	// const userId = req.session.userId;
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in as a teacher to proceed")
+	const homeworkTasks = req.body.homeworkTasks;
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	console.debug(`classIds: ${classIds}\n`,
+		`deadline: ${deadline}\n`,
+		`homeworkTasks: ${homeworkTasks}\n`,
+		`userRole: ${userRole}`);
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const homework = new schema.homeworks({
+		created_timestamp: Date.now(),
+		deadline_timestamp: deadline,
+		tasks: homeworkTasks
+	});
+	await homework.save();
+	await schema.classes.updateMany({'_id': {$in: classIds}}, {$push: {'homeworks': homework._id}});
 	res.json({status: 201, message: "Created"});
 });
 
@@ -457,10 +472,41 @@ router.post("/classes/:id([0-9a-f]+)/delete-pupil", async (req, res) => {
 
 // get statistics for all students in a class (Class Page)
 router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
-	const classId = req.params.id;
-	// const userId = req.session.userId;
-	// res.status(401).send("Log in as a teacher to proceed")
-	res.json({stats: "go here"});
+	const classId = ObjectId(req.params.id);
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const cls = await schema.classes.findOne({ $expr: {
+		$in: [userId, "$members"]
+	}, _id: classId});
+	console.debug(cls);
+	if(!cls) {
+		res.json({status: 404, message: "Could not access the class"});
+		return;
+	}
+	const pupils = await schema.users.find({_id: {$in: cls.members}, role: "pupil"});
+	console.debug(pupils);
+	const data = pupils.map( pupil => {
+		return {
+			fullName: pupil.last_name + " " + pupil.first_name,
+			email: pupil.email,
+			lastActivity: pupil.history.reduce( (a, b) => a && (a.timestamp > b.timestamp) ? a : b, null ),
+			homeworkProgress: 0, // for now
+			mistakes: {
+				addition: 0,
+				subtraction: 0,
+				multiplication: 0,
+				division: 0
+			},
+			lastDistractionTime: "2022-11-01T09:58:15.000Z",
+			lastDistractionSolutionTime: "1970-01-01T00:05:40.000Z"
+		};
+	} );
+	console.debug(data);
+	res.json({status: 200, message: "Ok", data: data});
 	/*[
 	{
 		firstName: "Fedor",
@@ -482,21 +528,52 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 
 // get aggregated statistics for all classes by teacher (Add Class Process Page)
 router.get("/classes", async (req, res) => {
-	// const userId = req.session.userId;
-	// res.status(401).send("Log in as a teacher to proceed")
-	res.json({data: "goes here"});
-	/*
-	[
-		{
-			name: "1A",
-			pupilCount: 24,
-			homeworks: [...],
-			doneLastHomework: 22,
-			totalSubmissions: 576,
-			correctSubmissions: 384
-		},
-	...]
-	 */
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const classesByTeacher = await schema.classes.find({ $expr: {
+			$in: [userId, "$members"]
+		}});
+	console.debug(classesByTeacher);
+	const result = []
+	for(const cls of classesByTeacher) {
+		const classInfo = {};
+		classInfo.title = cls.title;
+		classInfo.pupilCount = cls.members.length - 1;
+		const hwInfo = await lastPublishedHWData(cls);
+		console.debug("hwInfo == ", hwInfo);
+		/*for(const key in hwInfo) {
+			console.debug("hwInfo.key: ", hwInfo.key);
+			classInfo[key] = hwInfo.key;
+			console.debug("classInfo[key]: ", classInfo[key]);
+		}*/
+		console.debug({
+			...classInfo,
+			...hwInfo
+		});
+		result.push({
+			...classInfo,
+			...hwInfo
+		});
+	}
+	console.debug(result);
+	res.json({status: 200, message: "Ok", result: result});
+});
+
+router.get("/classes-ids", async (req, res) => {
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const classes = await schema.classes.find({ $expr: {
+		$in: [userId, "$members"]
+	}});
+	res.json({status: 200, message: "Ok", data: classes.map(cls => cls._id)});
 });
 
 // delete a class
