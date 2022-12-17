@@ -413,10 +413,41 @@ router.post("/classes/:id([0-9a-f]+)/delete-pupil", async (req, res) => {
 
 // get statistics for all students in a class (Class Page)
 router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
-	const classId = req.params.id;
-	// const userId = req.session.userId;
-	// res.status(401).send("Log in as a teacher to proceed")
-	res.json({stats: "go here"});
+	const classId = ObjectId(req.params.id);
+	const userId = ObjectId(req.cookies.userId);
+	const userRole = req.cookies.userRole;
+	if(userRole !== "teacher") {
+		res.json({status: 401, message: "Log in as a teacher to proceed"});
+		return;
+	}
+	const cls = await schema.classes.findOne({ $expr: {
+		$in: [userId, "$members"]
+	}, _id: classId});
+	console.debug(cls);
+	if(!cls) {
+		res.json({status: 404, message: "Could not access the class"});
+		return;
+	}
+	const pupils = await schema.users.find({_id: {$in: cls.members}, role: "pupil"});
+	console.debug(pupils);
+	const data = pupils.map( pupil => {
+		return {
+			fullName: pupil.last_name + " " + pupil.first_name,
+			email: pupil.email,
+			lastActivity: pupil.history.reduce( (a, b) => a && (a.timestamp > b.timestamp) ? a : b, null ),
+			homeworkProgress: 0, // for now
+			mistakes: {
+				addition: 0,
+				subtraction: 0,
+				multiplication: 0,
+				division: 0
+			},
+			lastDistractionTime: "2022-11-01T09:58:15.000Z",
+			lastDistractionSolutionTime: "1970-01-01T00:05:40.000Z"
+		};
+	} );
+	console.debug(data);
+	res.json({status: 200, message: "Ok", data: data});
 	/*[
 	{
 		firstName: "Fedor",
