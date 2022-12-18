@@ -5,11 +5,10 @@ import styles from '../styles/Navigation.module.css';
 
 
 export default function Navigation({navTrigger, setNavTrigger}) {
-
     const instance = axios.create({
         baseURL: "http://localhost:8000",
         withCredentials: true
-    })
+    });
 
     const navigate = useNavigate();
 
@@ -33,6 +32,8 @@ export default function Navigation({navTrigger, setNavTrigger}) {
                                           null)}, [navTrigger]);
     
     const logoutUser = async() => {
+        instance.post('/add_action', {action: 'Выход',
+                                      content: `Выход пользователя из системы`});
         await instance.get("/logout");
         setUser({id: "",
                  firstName: "",
@@ -43,7 +44,6 @@ export default function Navigation({navTrigger, setNavTrigger}) {
 
     const getNavigation = () => {
         var navigation = <></>;
-
         switch(user.role){
             case "pupil":
                 navigation = <div className={styles.navbar}>
@@ -134,9 +134,9 @@ export default function Navigation({navTrigger, setNavTrigger}) {
                     </div>
                 </div>
                 break;
-        }
+        };
         return navigation;
-    }
+    };
 
     return (
         getNavigation()

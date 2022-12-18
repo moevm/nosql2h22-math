@@ -37,9 +37,11 @@ export default function Login({navTrigger, setNavTrigger}){
             instance.get(`/remember-me?id=${response.data.userId}&role=${response.data.userRole}`)
                     .then(res => {setNavTrigger(!navTrigger);
                                   switch(response.data.userRole){
-                                  case "teacher": navigate("../classes"); break;
-                                  case "administrator": navigate("../logs"); break;
-                                  default: navigate("../"); break;}});
+                                      case "teacher": navigate("../classes"); break;
+                                      case "administrator": navigate("../logs"); break;
+                                      default: navigate("../"); break;};
+                                  instance.post('/add_action', {action: 'Вход в систему',
+                                                                content: `Вход пользователя в систему`});});
     };
 
     return (

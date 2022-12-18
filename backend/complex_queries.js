@@ -11,9 +11,9 @@ async function lastPublishedHW(classDocument) {
 }
 
 async function lastPublishedHWData(classDocument) {
-    const homework = await lastPublishedHW(classDocument);
+    const homework = (await lastPublishedHW(classDocument))[0];
     console.debug(homework);
-    if(!homework.length) {
+    if(!homework) {
         return {
             deadline: null,
             tasks: null,

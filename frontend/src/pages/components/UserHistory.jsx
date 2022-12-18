@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { NavLink, useParams, useLocation, useNavigate } from "react-router-dom";
+import {NavLink, useParams, useLocation, useNavigate} from "react-router-dom";
 import {SearchOutlined, FilterFilled} from '@ant-design/icons';
 import {Button, Checkbox, Col, Row, DatePicker, Table} from 'antd';
 import nav_styles from '../styles/Navigation.module.css';
@@ -60,7 +60,6 @@ export default function PupilHistory(){
         access();
         var filterNew = {...filter};
         filterNew.page = query.get('page') == null ? 1 : Number(query.get('page'));
-        filterNew.limit = query.get('limit') == null ? 10 : Number(query.get('limit'));
         filterNew.start_datetime = query.get('start_datetime') == null ? '' : query.get('start_datetime');
         filterNew.end_datetime = query.get('end_datetime') == null ? '' : query.get('end_datetime');
         filterNew.categories = query.get('categories') == null ? ["addition", "subtraction", "multiplication", "division"] : query.get('categories').split(',');
@@ -116,19 +115,17 @@ export default function PupilHistory(){
     useEffect(() => {
         if (displayData.display){
             query.set('page', filter.page);
-            query.set('limit', filter.limit);
             query.set('start_datetime', filter.start_datetime);
             query.set('end_datetime', filter.end_datetime);
             query.set('categories', filter.categories);
             query.set('modes', filter.modes);
             query.set('verdicts', filter.verdicts);
             navigate('?' + query.toString());
-            instance.get(`/personal/attempts?userId=${id}&${query.toString()}&datetime_sorter=${filter.datetime_sorter}&solving_time_sorter=${filter.solving_time_sorter}`)
+            instance.get(`/personal/attempts?userId=${id}&${query.toString()}&datetime_sorter=${filter.datetime_sorter}&solving_time_sorter=${filter.solving_time_sorter}&limit=${filter.limit}`)
                     .then(res => {
                         if (res.data.status == 200)
                             responseToDataSource(res.data)
                     });
-            
         }}, [filter, displayData]);
 
     const handleCategories = (prop) => (list) => {

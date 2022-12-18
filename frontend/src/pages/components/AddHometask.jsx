@@ -1,29 +1,25 @@
 import React, { useState, useEffect } from 'react'
+import axios from 'axios';
+import {useNavigate} from "react-router-dom";
 import { Select, InputNumber, Button, DatePicker } from 'antd'
-import {Button as MUIButton} from '@mui/material'
-import {IconButton} from '@mui/material'
+import {Button as MUIButton, IconButton} from '@mui/material'
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined'
 import styles from '../styles/AddHometask.module.css'
 
 export default function AddHometask(){
-    const classes_options = [
-        {
-            label: '1А',
-            value: 'ObjectID1A',
-        },
-        {
-            label: '1Б',
-            value: 'ObjectID1Б',
-        },
-        {
-            label: '1В',
-            value: 'ObjectID1В',
-        },
-        {
-            label: '3А',
-            value: 'ObjectID3A',
-        }
-    ]
+    const instance = axios.create({
+        baseURL: 'http://localhost:8000',
+        withCredentials: true
+    });
+
+    useEffect(() => {
+        instance.post('/add_action', {action: 'Открытие страницы',
+                                      content: `Открыта страница "Добавить задание"`});
+    }, []);
+
+    const navigate = useNavigate();
+
+    const [classesOptions, setClassesOptions] = useState([])
 
     const categories_options = [
         {
@@ -44,6 +40,21 @@ export default function AddHometask(){
         }
     ]
 
+    useEffect(() => {
+        const getClasses = async () => {
+            const response = await instance.get('/classes-ids');
+            if (response.data.status == 200){
+                var result = []
+                var classes = response.data.data;
+                classes.map(class_ => {
+                    result.push({label: class_.title, value: class_._id})
+                })
+                setClassesOptions(result);
+            }
+        }
+        getClasses();
+    }, [])
+
     const [classes, setClasses] = useState([])
 
     const [tasks_count, setTasksCount] = useState(2)
@@ -56,6 +67,8 @@ export default function AddHometask(){
         }
     ])
 
+    const [deadline, setDeadline] = useState('')
+
     const handleChangeClasses = (value) => {
         setClasses(value)
     }
@@ -64,8 +77,6 @@ export default function AddHometask(){
         setTasks([...tasks, {id: tasks_count, categories: [], count: 1}])
         setTasksCount(tasks_count + 1)
     }
-
-    const [deadline, setDeadline] = useState('')
 
     const deleteTask = (prop) => (e) => {
         setTasks(tasks.filter(item => item.id !== prop))
@@ -101,14 +112,26 @@ export default function AddHometask(){
                 </IconButton> : <></>}
         </div>)}
     </div>
+
+    const addTask = async () => {
+        var body = {
+            classIds: classes,
+            deadline: deadline,
+            homeworkTasks: tasks
+        }
+        await instance.post("/classes/homeworks", body);
+        await instance.post('/add_action', {action: 'Создание задания',
+                                            content: `Создано домашнее задание для классов ${classes}, дедлайном ${deadline} и заданиями ${JSON.stringify(tasks)}`});
+        navigate('/classes');
+    };
     
     return (
         <div className={styles.content}>
-            <Select mode="multiple" allowClear style={{width: '300px'}} placeholder="Выберите классы" options={classes_options} onChange={handleChangeClasses}/>
+            <Select mode="multiple" allowClear style={{width: '300px'}} placeholder="Выберите классы" options={classesOptions} onChange={handleChangeClasses}/>
             <DatePicker showTime style={{width: '300px'}} placeholder="Выберите дедлайн" onChange={(date, dateString) => {setDeadline(dateString)}}/>
             {displayHometask()}
             <Button onClick={handleAddTask}>Добавить строку</Button>
-            <MUIButton className={`${styles.main_button} ${styles.button_text}`}>Опубликовать задание</MUIButton>
+            <MUIButton className={`${styles.main_button} ${styles.button_text}`} onClick={addTask}>Опубликовать задание</MUIButton>
         </div>
     )
 }

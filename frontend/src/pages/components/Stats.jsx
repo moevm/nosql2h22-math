@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import {NavLink, useParams, useLocation, useNavigate } from "react-router-dom"
-import {DatePicker} from 'antd'
-import Chart from 'react-apexcharts'
-import styles from '../styles/Stats.module.css'
-import nav_styles from '../styles/Navigation.module.css'
+import {NavLink, useParams, useLocation, useNavigate} from "react-router-dom";
+import {DatePicker} from 'antd';
+import Chart from 'react-apexcharts';
+import styles from '../styles/Stats.module.css';
+import nav_styles from '../styles/Navigation.module.css';
 
 export default function Stats(){
     const instance = axios.create({
@@ -29,12 +29,14 @@ export default function Stats(){
     const [series, setSeries] = useState({
         correct: [0, 0, 0, 0],
         not_correct: [0, 0, 0, 0]
-    })
+    });
 
     const [filter, setFilter] = useState({
         start_datetime: '',
         end_datetime: ''
-    })
+    });
+
+    const [homeworks, setHomeworks] = useState(<></>);
 
     useEffect(() => {
         const access = async () => {
@@ -69,7 +71,47 @@ export default function Stats(){
                     setSeries(res.data.series);
             });
         }
-    }, [displayData, filter])
+    }, [displayData, filter]);
+
+    const getHometasks = async() => {
+        const homeworks_response = await instance.get(`/homeworks?userId=${id}`);
+        console.log(homeworks_response);
+        if (homeworks_response.data.status == 200){
+            var homeworks_list = homeworks_response.data.homeworks;
+            let i = 0;
+            const result = 
+                <div className={styles.homeworks_content}>
+                    <div style={{textAlign: 'center', marginBottom: '10px'}}>Прогресс домашнего задания</div>
+                    <div className={styles.homeworks}>
+                        {homeworks_list.map(homework => (
+                        <div key={i++} className={styles.homework}
+                                        style={(homework.status == 'completed') ?
+                                                {border: '2px dashed #3FB017'} :
+                                                ((homework.status == 'failed') ?
+                                                    {border: '2px dashed #FF4D4F'} :
+                                                    {border: '2px dashed rgba(227, 114, 34, 0.8)'})}>
+                            <div className={styles.title}>
+                                <div>Домашнее задание</div>
+                                <div>От {`${homework.created_timestamp.substring(0, 10)} ${homework.created_timestamp.substring(11, 19)}`}</div>
+                                <div>До {`${homework.deadline_timestamp.substring(0, 10)} ${homework.deadline_timestamp.substring(11, 19)}`}</div>
+                            </div>
+                            <ol>
+                                {homework.tasks.map(task =>
+                                    <li key={i++}>{task.categories.join(" и ") + " - " + task.progress + "/" + task.count}</li>
+                                )}
+                            </ol>
+                        </div>
+                        ))}
+                    </div>
+                </div>
+            setHomeworks(result)
+        }
+    }
+
+    useEffect(() => {
+        if (displayData.display)
+            getHometasks();
+    }, [displayData])
 
     let state = { 
         series: [{
@@ -148,56 +190,6 @@ export default function Stats(){
         },
     };
 
-    let i = 0;
-
-    let homeworks_history_response = [
-        {deadline_timestamp: "11 января 2023",
-         status: 'in progress',
-         tasks: [{categories: ['сложение', 'умножение'],
-                  count: 10,
-                  progress: 9},
-                 {categories: ['вычитание', 'умножение', 'деление'],
-                  count: 5,
-                  progress: 5},
-                 {categories: ['сложение'],
-                  count: 15,
-                  progress: 3}]},
-        {deadline_timestamp: "13 января 2020",
-         status: 'failed',
-         tasks: [{categories: ['сложение'],
-                  count: 30,
-                  progress: 21},
-                 {categories: ['вычитание', 'деление'],
-                  count: 5,
-                  progress: 3}]},
-        {deadline_timestamp: "15 января 2019",
-         status: 'completed',
-         tasks: [{categories: ['сложение', 'вычитание', 'умножение', 'деление'],
-                  count: 10,
-                  progress: 10}]}
-    ]
-
-    let homeworks = <div>
-                        {homeworks_history_response.map(homework => (
-                        <div key={i++} className={styles.homework}
-                                       style={(homework.status == 'completed') ?
-                                                {border: '2px dashed #3FB017'} :
-                                                ((homework.status == 'failed') ?
-                                                    {border: '2px dashed #FF4D4F'} :
-                                                    {border: '2px dashed rgba(227, 114, 34, 0.8)'})}>
-                            <div className={styles.title}>
-                                <div>Домашнее задание</div>
-                                <div>До {homework.deadline_timestamp}</div>
-                            </div>
-                            <ol>
-                                {homework.tasks.map(task =>
-                                    <li key={i++}>{task.categories.join(' и ') + ' - ' + task.progress + '/' + task.count}</li>
-                                )}
-                            </ol>
-                        </div>
-                        ))}
-                    </div>
-
     const getSubNavigation = () => {
         var activeStyle = {
             color: "#07889B"
@@ -237,11 +229,7 @@ export default function Stats(){
                                 defaultValue={[filter.start_datetime == '' ? '' : dayjs(filter.start_datetime, 'YYYY-MM-DD'),
                                                filter.end_datetime == '' ? '' : dayjs(filter.end_datetime, 'YYYY-MM-DD')]}/>
                         </div>
-                        {/*
-                        <div className={styles.homeworks_content}>
-                            <div style={{textAlign: 'center', marginBottom: '10px'}}>Прогресс домашнего задания</div>
-                            {homeworks}
-                            </div> */}
+                        {homeworks}
                     </div>
                 </> : <div>You can't access to this information</div>
             }

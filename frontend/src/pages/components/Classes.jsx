@@ -1,32 +1,120 @@
-import React, { useState, useEffect } from 'react'
-import {FilterFilled} from '@ant-design/icons'
-import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined'
-import {CancelOutlined} from '@mui/icons-material'
-import {Button, Checkbox, Col, Row, Table} from 'antd'
-import {Button as MUIButton, IconButton, TextField} from '@mui/material'
-import styles from '../styles/Classes.module.css'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {NavLink, useParams, useLocation, useNavigate} from "react-router-dom";
+import {Button, Checkbox, Col, Row, Table} from 'antd';
+import {FilterFilled} from '@ant-design/icons';
+import {Button as MUIButton, IconButton, TextField} from '@mui/material';
+import {CancelOutlined, ClearOutlined} from '@mui/icons-material';
+import styles from '../styles/Classes.module.css';
 
 export default function Classes(){
-    const [categoriesFilter, setCategoriesFilter] = useState({
-        categories: ["addition", "subtraction", "multiplication", "division"],
-        modes: ["lonely", "together", "as_part"]
-    })
+    const instance = axios.create({
+        baseURL: 'http://localhost:8000',
+        withCredentials: true
+    });
 
-    const [newClassName, setNewClassName] = useState('')
+    useEffect(() => {
+        instance.post('/add_action', {action: 'Открытие страницы',
+                                      content: `Открыта страница "Классы"`});
+    }, []);
+
+    const navigate = useNavigate();
+
+    const query = new URLSearchParams(useLocation().search);
+
+    const [totalElements, setTotalElements] = useState(5);
+
+    const [newClassName, setNewClassName] = useState('');
+
+    const [display, setDisplay] = useState(false);
+
+    const [dataSource, setDataSource] = useState([]);
+
+    const [filter, setFilter] = useState({
+        class_sorter: "descend",
+        pupils_count_sorter: "",
+        categories: ["addition", "subtraction", "multiplication", "division"],
+        modes: ["single", "jointly", "as_part_of"],
+        deadline_sorter: "",
+        completed_homeworks_sorter: "",
+        submitted_answers_sorter: "",
+        correct_answers_sorter: "",
+        page: 1,
+        limit: 10
+    });
+
+    useEffect(() => {
+        const access = async () => {
+            const user = await instance.get('/whoami');
+            if (!user.data)
+                return;
+            if (user.data.role == "teacher"){
+                setDisplay(true);
+                return;
+            };
+        }
+        access();
+        var filterNew = {...filter};
+        filterNew.page = query.get('page') == null ? 1 : Number(query.get('page'));
+        filterNew.categories = query.get('categories') == null ? ["addition", "subtraction", "multiplication", "division"] : query.get('categories').split(',');
+        filterNew.modes = query.get('modes') == null ? ["single", "jointly", "as_part_of"] : query.get('modes').split(',');
+        setFilter(filterNew);
+    }, []);
+
+    
+    const responseToDataSource = (response) => {
+        var i = 0;
+        var result = [];
+        var classesArray = response.result;
+        setTotalElements(response.totalElements);
+        classesArray.map(record => {
+            result.push({
+                key: i++,
+                class: record.title,
+                class_id: record._id,
+                pupil_count: record.pupilCount,
+                homework: record.tasks ? record.tasks.map(res => `${res.categories.join(" и ")} - ${res.count}`).join('; ') : '',
+                deadline: record.deadline ? `${record.deadline.substring(0, 10)} ${record.deadline.substring(11, 19)}` : '',
+                completed_homework_count: record.doneCount,
+                attempts_total: record.answersCount,
+                correct_answers: record.correctAnswersCount
+            });
+        });
+        setDataSource(result);
+    };
+
+    const updateTable = () => {
+        query.set('page', filter.page);
+        query.set('categories', filter.categories);
+        query.set('modes', filter.modes);
+        navigate('?' + query.toString());
+        instance.get(`/classes?${query.toString()}&limit=${filter.limit}&pupils_count_sorter=${filter.pupils_count_sorter}&deadline_sorter=${filter.deadline_sorter}`+
+                     `&completed_homeworks_sorter=${filter.completed_homeworks_sorter}&submitted_answers_sorter=${filter.submitted_answers_sorter}&correct_answers_sorter=${filter.correct_answers_sorter}`)
+                .then(res => {
+                    console.log(res.data)
+                    if (res.data.status == 200)
+                        responseToDataSource(res.data)
+                });
+    }
+
+    useEffect(() => {
+        if (display){
+            updateTable();
+        }}, [filter, display]);
 
     const handleCategories = (prop) => (list) => {
-        setCategoriesFilter({...categoriesFilter, [prop]: list})
+        setFilter({...filter, [prop]: list})
     }
 
     const categoriesReset = () => {
-        setCategoriesFilter({...categoriesFilter, categories: ["addition", "subtraction", "multiplication", "division"],
-                                                  modes: ["lonely", "together", "as_part"]})
+        setFilter({...filter, categories: ["addition", "subtraction", "multiplication", "division"],
+                                                  modes: ["single", "jointly", "as_part_of"]})
     }
     
     const getColumnCategoriesFilterProps = () => ({
         filterDropdown: () => (
             <div style={{backgroundColor: '#FFFFFF !important'}}>
-                <Checkbox.Group style={{margin: '4px'}} value={categoriesFilter.categories} onChange={handleCategories('categories')}>
+                <Checkbox.Group style={{margin: '4px'}} value={filter.categories} onChange={handleCategories('categories')}>
                     <Col>
                         <Row>
                             <Checkbox value="addition">Сложение</Checkbox>
@@ -42,23 +130,20 @@ export default function Classes(){
                         </Row>
                     </Col>
                 </Checkbox.Group>
-                <Checkbox.Group style={{margin: '4px'}} value={categoriesFilter.modes} onChange={handleCategories('modes')}>
+                <Checkbox.Group style={{margin: '4px'}} value={filter.modes} onChange={handleCategories('modes')}>
                     <Col>
                         <Row>
-                            <Checkbox value="lonely">Одиночные</Checkbox>
+                            <Checkbox value="single">Одиночные</Checkbox>
                         </Row>
                         <Row>
-                            <Checkbox value="together">Совместно</Checkbox>
+                            <Checkbox value="jointly">Совместно</Checkbox>
                         </Row>
                         <Row>
-                            <Checkbox value="as_part">В составе</Checkbox>
+                            <Checkbox value="as_part_of">В составе</Checkbox>
                         </Row>
                     </Col>
                 </Checkbox.Group>
                 <div style={{display: 'flex'}}>
-                    <Button type="primary" style={{width: '100%', margin: 'auto'}}>
-                        Apply
-                    </Button>
                     <Button style={{width: '100%', margin: 'auto'}} onClick={categoriesReset}>
                         Reset
                     </Button>
@@ -66,36 +151,16 @@ export default function Classes(){
             </div>
         ),
         filterIcon: () => (
-            <FilterFilled style={{color: (categoriesFilter.categories.length + categoriesFilter.modes.length) < 7 ? '#1890ff' : undefined}}/>
-        ),
-        onFilter: (value, record) => {},
-        render: (text) =>
-            text
+            <FilterFilled style={{color: (filter.categories.length + filter.modes.length) < 7 ? '#1890ff' : undefined}}/>
+        )
     });
 
-    const [dataSource, setDataSource] = useState([
-        {
-            key: '1',
-            class: '1А',
-            class_id: '123',
-            pupil_count: 25,
-            homework: '1. Сложение 24; 2. Умножение 13; 3. Вычитание 30;',
-            deadline: '23.01.2023 00:00:00',
-            completed_homework_count: 23,
-            attempts_total: 1000,
-            correct_answers: 850
-        },{
-            key: '2',
-            class: '1Б',
-            class_id: '222',
-            pupil_count: 30,
-            homework: '1. Умножение 5;',
-            deadline: '20.01.2022 12:32:10',
-            completed_homework_count: 21,
-            attempts_total: 2132,
-            correct_answers: 1349
-        },
-    ]);
+    const deleteClass = async(classId) => {
+        await instance.post(`/classes/${classId}/delete`);
+        instance.post('/add_action', {action: 'Удаление класса',
+                                      content: `Удалён класс id = ${classId}`});
+        updateTable();
+    }
 
     const columns = [
         {
@@ -144,34 +209,89 @@ export default function Classes(){
         },
         {
           title: '',
-          key: '',
-          render: (_, record) => <a href={`classes/delete/${record.class_id}`}>
-                                        <IconButton color="primary" aria-label="upload picture" component="label">
-                                            <ClearOutlinedIcon style={{color: 'red', fontSize: 'medium'}}/>
-                                        </IconButton>
-                                    </a>,
+          key: 'x',
+          onCell: (record, rowIndex) => {
+            return {
+                onClick: (ev) => {
+                    deleteClass(record.class_id)
+                },
+            };
+          },
+          render: (_, record) => <IconButton color="primary" aria-label="upload picture" component="label">
+                                    <ClearOutlined style={{color: 'red', fontSize: 'medium'}} />
+                                 </IconButton>,
         },
     ];
 
-    const onchange = (pagination, filters, sorter, extra) => {
-        console.log('params', pagination, filters, sorter, extra);
+    const handleChangeFilters = (pagination, filters, sorter, extra) => {
+        var filterNew = {...filter};
+        filterNew.page = pagination.current;
+        filterNew.limit = pagination.pageSize;
+        switch (sorter.field){
+            case 'class':
+                filterNew.class_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                filterNew.pupils_count_sorter = '';
+                filterNew.deadline_sorter = '';
+                filterNew.completed_homeworks_sorter = '';
+                filterNew.submitted_answers_sorter = '';
+                filterNew.correct_answers_sorter = '';
+                break;
+            case 'pupil_count':
+                filterNew.class_sorter = '';
+                filterNew.pupils_count_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                filterNew.deadline_sorter = '';
+                filterNew.completed_homeworks_sorter = '';
+                filterNew.submitted_answers_sorter = '';
+                filterNew.correct_answers_sorter = '';
+                break;
+            case 'deadline':
+                filterNew.class_sorter = '';
+                filterNew.pupils_count_sorter = '';
+                filterNew.deadline_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                filterNew.completed_homeworks_sorter = '';
+                filterNew.submitted_answers_sorter = '';
+                filterNew.correct_answers_sorter = '';
+                break;
+            case 'completed_homework_count':
+                filterNew.class_sorter = '';
+                filterNew.pupils_count_sorter = '';
+                filterNew.deadline_sorter = '';
+                filterNew.completed_homeworks_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                filterNew.submitted_answers_sorter = '';
+                filterNew.correct_answers_sorter = '';
+                break;
+            case 'attempts_total':
+                filterNew.class_sorter = '';
+                filterNew.pupils_count_sorter = '';
+                filterNew.deadline_sorter = '';
+                filterNew.completed_homeworks_sorter = '';
+                filterNew.submitted_answers_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                filterNew.correct_answers_sorter = '';
+                break;
+            case 'correct_answers':
+                filterNew.class_sorter = '';
+                filterNew.pupils_count_sorter = '';
+                filterNew.deadline_sorter = '';
+                filterNew.completed_homeworks_sorter = '';
+                filterNew.submitted_answers_sorter = '';
+                filterNew.correct_answers_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                break;
+            default:
+                break;
+        };
+        setFilter(filterNew);
     };
 
-    const handleAddClass = () => {
-        let class_ = {
-            key: dataSource.length + 1,
-            class: newClassName,
-            class_id: '555',
-            pupil_count: 0,
-            homework: '',
-            deadline: '',
-        }
-        setDataSource([...dataSource, class_])
+    const handleAddClass = async () => {
+        await instance.post('/classes', {className: newClassName});
+        await instance.post('/add_action', {action: 'Создание класса',
+                                            content: `Создан класс с названием ${newClassName}`});
+        updateTable();
     }
 
     return (
     <>
-        <Table dataSource={dataSource} columns={columns} pagination={false} onChange={onchange}/>
+        <Table dataSource={dataSource} columns={columns} pagination={{total: totalElements, showQuickJumper: true}} onChange={handleChangeFilters}/>
         <div className={styles.new_class}>
             <div className={styles.title}>Новый класс</div>
             <TextField style={{width: 360, height: 60}}

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { NavLink, useParams, useLocation, useNavigate } from "react-router-dom";
-import {SearchOutlined, FilterFilled} from '@ant-design/icons'
-import {Input, Space,Button, Checkbox, Col, Row, DatePicker, Table} from 'antd'
+import {useLocation, useNavigate} from "react-router-dom";
+import {SearchOutlined, FilterFilled} from '@ant-design/icons';
+import {Input, Space,Button, Checkbox, Col, Row, DatePicker, Table} from 'antd';
 
 export default function History(){
     const instance = axios.create({
@@ -74,20 +74,16 @@ export default function History(){
     });
 
     const handleSearch = (prop) => (e) => {
-        setFilter({...filter, [prop]: e.target.value})
-    }
+        setFilter({...filter, [prop]: e.target.value});
+    };
 
     const handleRoles = (list) => {
-        setFilter({...filter, roles: list})
-    }
+        setFilter({...filter, roles: list});
+    };
 
     const rolesReset = () => {
         setFilter({...filter, roles: ["pupil", "teacher"]});
-    }
-
-    useEffect(() => {
-        console.log(filter)
-    }, [filter])
+    };
     
     const getColumnRolesFilterProps = () => ({
         filterDropdown: () => (
@@ -217,6 +213,7 @@ export default function History(){
         switch (sorter.field){
             case 'timestamp':
                 filterNew.datetime_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                break;
             default:
                 break;
         };

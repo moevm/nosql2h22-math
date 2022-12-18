@@ -1,9 +1,9 @@
-import React, {useState} from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
-import {Button, IconButton, TextField} from '@mui/material'
-import {VisibilityOutlined, VisibilityOffOutlined, CancelOutlined} from '@mui/icons-material'
-import styles from '../styles/Authentification.module.css'
+import React, {useState} from 'react';
+import axios from 'axios';
+import {useNavigate} from 'react-router-dom';
+import {Button, IconButton, TextField} from '@mui/material';
+import {VisibilityOutlined, VisibilityOffOutlined, CancelOutlined} from '@mui/icons-material';
+import styles from '../styles/Authentification.module.css';
 
 
 export default function Register({navTrigger, setNavTrigger}){
@@ -51,9 +51,11 @@ export default function Register({navTrigger, setNavTrigger}){
                 instance.get(`/remember-me?id=${response.data.userId}&role=${response.data.userRole}`)
                         .then(res => {setNavTrigger(!navTrigger); switch(response.data.userRole){
                                                                   case "teacher": navigate("../classes"); break;
-                                                                  default: navigate("../"); break;}});
-        }
-    }
+                                                                  default: navigate("../"); break;};
+                                      instance.post('/add_action', {action: 'Регистрация пользователя',
+                                                                    content: `Пользователь зарегистрирован`});});
+        };
+    };
 
     return (
         <>
