@@ -17,5 +17,16 @@ async function pushLog(logLevel, message) {
     await logEntry.save();
 }
 
-module.exports.pushLog = pushLog;
+async function logInEndpoint(logLevel, req, message) {
+    await pushLog(logLevel, `${req.method} ${req.url}: ${message}`);
+}
+
+async function logEnterEndpoint(req) {
+    await pushLog(LOG_LEVEL.debug, `${req.method} ${req.url} ` +
+        `with query = ${JSON.stringify(req.query)}, body = ${JSON.stringify(req.body)}, cookies = ${JSON.stringify(req.cookies)}`);
+}
+
+module.exports.logSimple = pushLog;
+module.exports.logPretty = logInEndpoint;
+module.exports.logEnterEndpoint = logEnterEndpoint;
 module.exports.LOG_LEVEL = LOG_LEVEL;
