@@ -878,6 +878,20 @@ router.get("/logs", async (req, res) => {
 	res.json({status: 200, logs: result, totalElements: logsCount});
 });
 
+// for test and debug -- clears the database(!)
+router.post("/clear-db", async (req,res) => {
+	await Promise.all([
+		schema.users.deleteMany({}),
+		schema.histories.deleteMany({}),
+		schema.tasks.deleteMany({}),
+		schema.classes.deleteMany({}),
+		schema.homeworks.deleteMany({}),
+		schema.attempts.deleteMany({}),
+		schema.logs.deleteMany({})
+	]);
+	res.end("Database cleared! This better be intentional.")
+});
+
 // fallback
 router.get("(.*)", (req, res) => {
 	res.json({status: 404, message: "No valid endpoint for that"});
