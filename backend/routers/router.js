@@ -1,6 +1,5 @@
 const express = require('express');
 const router  = express.Router();
-const mongoose = require('mongoose');
 const ObjectId = require('mongoose').Types.ObjectId;
 const schema = require('../database/schema');
 
@@ -49,8 +48,6 @@ router.post("/submit", async (req, res) => {
 	}
 	const taskId = ObjectId(req.body.taskId);
 	const answer = Number.parseInt(req.body.answer);
-	// const startTime = Number.parseInt(req.body.startTime);
-	// const endTime = Number.parseInt(req.body.endTime);
 	const correctAnswer = (await schema.tasks.findOne({'_id': taskId},
 		{'_id': 0, 'correct_answer': 1})).correct_answer;
 	console.log(`Answer is ${answer}; correct answer is ${correctAnswer}`);
@@ -189,16 +186,13 @@ router.get("/personal/attempts", async (req, res) => {
 	const categories = req.query.categories;
 	const answer = req.query.answer;
 	const verdict = req.query.verdict; // null | "correct" | "not correct" | "in progress"
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("Requested pupil is not in any of this teacher's classes")
 	const taskIds = (await schema.users.findOne({"_id": ObjectId(userId)}, {"_id": 0, "tasks": 1})).tasks;
-	var filter = {}
-	if ((startDatetime != '') && (endDatetime == ''))
+	const filter = {}
+	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["datetime"] = {$gte: (new Date(startDatetime))}
-	if ((endDatetime != '') && (startDatetime == ''))
+	if ((endDatetime !== '') && (startDatetime === ''))
 		filter["datetime"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
-	if ((startDatetime != '') && (endDatetime != ''))
+	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["datetime"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	const attemptsCount = (await schema.tasks.aggregate([
 		{$match: {'_id': {$in: taskIds}}},
@@ -238,15 +232,15 @@ router.get("/personal/graph-stats", async (req, res) => {
 		res.json({status: 400, message: `User with id=${requestedId} not found`});
 		return;
 	}
-	var filter = {
+	const filter = {
 		"verdict": {$in: ["correct", "not correct"]}
 	}
 	
-	if ((startDatetime != '') && (endDatetime == ''))
+	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["end_datetime"] = {$gte: (new Date(startDatetime))}
-	if ((endDatetime != '') && (startDatetime == ''))
+	if ((endDatetime !== '') && (startDatetime === ''))
 		filter["end_datetime"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
-	if ((startDatetime != '') && (endDatetime != ''))
+	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["end_datetime"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	console.log(filter)
 	const attempts = await schema.tasks.aggregate([
@@ -261,13 +255,13 @@ router.get("/personal/graph-stats", async (req, res) => {
 		{$unwind: {'path': '$categories'}},
 		{$project: {"category": "$categories", "verdict": "$verdict"}}
 	]);
-	var resObject = {
+	const resObject = {
 		addition: [0, 0],
 		subtraction: [0, 0],
 		multiplication: [0, 0],
 		division: [0, 0]
 	};
-	attempts.map(res => res.verdict == "correct" ? resObject[res.category][0]++ : resObject[res.category][1]++);
+	attempts.map(res => res.verdict === "correct" ? resObject[res.category][0]++ : resObject[res.category][1]++);
 	const result = {series: {correct: [resObject.addition[0], resObject.subtraction[0], resObject.multiplication[0], resObject.division[0]],
 				    		 not_correct: [resObject.addition[1], resObject.subtraction[1], resObject.multiplication[1], resObject.division[1]]
 					},
@@ -280,7 +274,6 @@ router.post("/classes/homeworks", async (req, res) => {
 	const classIds = req.body.classIds.map(id => ObjectId(id));
 	const deadline = new Date(req.body.deadline);
 	const homeworkTasks = req.body.homeworkTasks;
-	const userId = ObjectId(req.cookies.userId);
 	const userRole = req.cookies.userRole;
 	console.debug(`classIds: ${classIds}\n`,
 		`deadline: ${deadline}\n`,
@@ -304,7 +297,7 @@ router.get("/homeworks", async (req, res) => {
 	const requestedId = req.query.userId;
 	const requestedClass = req.query.classId;
 	const type = req.query.type;
-	var response;
+	let response;
 	if (requestedId !== undefined){
 		response = await schema.classes.findOne({"members": ObjectId(requestedId)}, {"_id": 0, "homeworks": 1});
 	} else if (requestedClass !== undefined){
@@ -312,15 +305,15 @@ router.get("/homeworks", async (req, res) => {
 	} else {
 		res.json({status: 403, message: "Wrong arguments"});
 		return;
-	};
+	}
 	if (response == null){
 		res.json({status: 200, homeworks: []});
 		return;
 	}
-	homeworkIds = response.homeworks;
+	let homeworkIds = response.homeworks;
 	const homeworks = await schema.homeworks.aggregate([
 		{$match: {"_id": {$in: homeworkIds}}},
-		{$match: type == "in-progress" ? {"deadline_timestamp": {$gte: (new Date())}} : {}},
+		{$match: type === "in-progress" ? {"deadline_timestamp": {$gte: (new Date())}} : {}},
 		{$project: {'created_timestamp': '$created_timestamp',
 					'deadline_timestamp': '$deadline_timestamp',
 					'tasks': '$tasks'}},
@@ -329,7 +322,7 @@ router.get("/homeworks", async (req, res) => {
 			then: "in-progress",
 			else: "completed"
 		}}}},
-		{$sort: {'deadline_timestamp': type == "in-progress" ? 1 : -1}}
+		{$sort: {'deadline_timestamp': type === "in-progress" ? 1 : -1}}
 	]);
 
 	if (requestedId !== undefined){
@@ -351,13 +344,12 @@ router.get("/homeworks", async (req, res) => {
 				for (let k = 0; k < attempts.length; k++){
 					homeworks[i].tasks[j].categories.every(category => {return attempts[k].includes(category)}) ? homeworks[i].tasks[j].progress++ : null;
 				}
-				(homeworks[i].tasks[j].progress < homeworks[i].tasks[j].count) && (homeworks[i].status == "completed") ? homeworks[i].status = "failed" : null;
+				(homeworks[i].tasks[j].progress < homeworks[i].tasks[j].count) && (homeworks[i].status === "completed") ? homeworks[i].status = "failed" : null;
 			}
 		}
 	}
 	res.json({status: 200, homeworks: homeworks});
-	return;
-})
+});
 
 // add a class
 router.post("/classes", async (req, res) => {
@@ -508,23 +500,6 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 	} );
 	console.debug(data);
 	res.json({status: 200, message: "Ok", data: data});
-	/*[
-	{
-		firstName: "Fedor",
-		lastName: "Fedorov",
-		email: "fedorov.f@example.com",
-		lastActivity: "2022-11-15T06:31:15.000Z",
-		homeworkProgress: 6,
-		errorCount: {
-			addition: 1,
-			subtraction: 8,
-			multiplication: 2,
-			division: 38
-		},
-		lastDistractionTime: "2022-11-01T09:58:15.000Z",
-		lastDistractionSolveTime: "1970-01-01T00:05:40.000Z"
-	}, ... ]
-	 */
 });
 
 // get aggregated statistics for all classes by teacher (Add Class Process Page)
@@ -547,11 +522,6 @@ router.get("/classes", async (req, res) => {
 		classInfo.pupilCount = cls.members.length - 1;
 		const hwInfo = await lastPublishedHWData(cls);
 		console.debug("hwInfo == ", hwInfo);
-		/*for(const key in hwInfo) {
-			console.debug("hwInfo.key: ", hwInfo.key);
-			classInfo[key] = hwInfo.key;
-			console.debug("classInfo[key]: ", classInfo[key]);
-		}*/
 		console.debug({
 			...classInfo,
 			...hwInfo
@@ -701,7 +671,7 @@ router.get("/access-to-user", async (req, res) => {
 		res.json({status: 401, message: "Not enough information"});
 		return;
 	}
-	if (requestedId.length != 24){
+	if (requestedId.length !== 24){
 		res.json({status: 401, message: "Non-supportable id format"});
 		return;
 	}
@@ -709,7 +679,7 @@ router.get("/access-to-user", async (req, res) => {
 	if (!requestedUser){
 		res.json({status: 400, message: `User with id=${requestedId} not found`});
 		return;
-	};
+	}
 	if (requesterRole === "administrator"){
 		res.json({
 			status: 200,
@@ -717,12 +687,12 @@ router.get("/access-to-user", async (req, res) => {
 			requesterRole: req.cookies.userRole
 		});
 		return;
-	};
+	}
 	const requestedUserRole = requestedUser.role;
 	if ((requesterRole === "pupil") || (requestedUserRole !== "pupil")){
 		res.json({status: 403, message: "Access denied"})
 		return;
-	};
+	}
 	res.json({
 		status: 200,
 		user: requestedUser,
@@ -775,7 +745,6 @@ router.get("/test/init", async (req, res) => {
 		console.error("OMG!");
 		console.error(e);
 	}
-	// console.log(await schema.users.find({}));
 	res.json({message: "Ok"});
 });
 
@@ -785,17 +754,13 @@ router.get("/history", async (req, res) => {
 	const endDatetime = req.query.end_datetime;
 	const page = Number(req.query.page);
 	const limit = Number(req.query.limit);
-	var filter = {};
-	if ((startDatetime != '') && (endDatetime == ''))
+	const filter = {};
+	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime))}
-	if ((endDatetime != '') && (startDatetime == ''))
+	if ((endDatetime !== '') && (startDatetime === ''))
 		filter["timestamp"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
-	if ((startDatetime != '') && (endDatetime != ''))
+	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
-	// const adminId = req.session.userId;
-	// res.status(400).send(`${something} is not ${some_type}`)
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("User must be an administrator")
 	const historyCount = (await schema.users.aggregate([
 		{$match: {}},
 		{$unwind: {'path': '$history'}},
@@ -827,7 +792,7 @@ router.post("/add_action", async (req, res) => {
 	const userId = req.cookies.userId;
 	const action = req.body.action;
 	const content = req.body.content;
-	if (userId == undefined){
+	if (userId === undefined){
 		return;
 	}
 	await schema.users.updateOne({"_id": ObjectId(userId)},
@@ -847,11 +812,11 @@ router.get("/logs", async (req, res) => {
 	const page = Number(req.query.page);
 	const limit = Number(req.query.limit);
 	var filter = {};
-	if ((startDatetime != '') && (endDatetime == ''))
+	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime))}
-	if ((endDatetime != '') && (startDatetime == ''))
+	if ((endDatetime !== '') && (startDatetime === ''))
 		filter["timestamp"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
-	if ((startDatetime != '') && (endDatetime != ''))
+	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	
 	const logsCount = (await schema.logs.aggregate([
@@ -865,7 +830,7 @@ router.get("/logs", async (req, res) => {
 	if (req.cookies.userRole !== "administrator"){
 		res.json({status: 403, message: "User must be an administrator"});
 		return;
-	};
+	}
 	const result = await schema.logs.aggregate([
 		{$match: {}},
 		{$project: {'_id': 0,
@@ -910,133 +875,3 @@ router.delete("(.*)", (req, res) => {
 });
 
 module.exports = router;
-
-
-/* 1. Восстановление задачи при авторизации
-const user_id = ObjectId('637cef8a42b25ba8ee08ece8')
-const categories = ['addition', 'division']
-const task_ids = (await schema.users.findOne({'_id': user_id}, {'tasks': 1})).tasks
-const result = await schema.tasks.findOne({'_id': {$in: task_ids}, 'categories': categories, 'attempts.status': 'in progress'})
-
-*/
-
-/* 2. Вставка попытки решения
-const task_id = ObjectId('637de40e230fffbc9b34414e')
-const user_answer = 10
-const correct_answer = (await schema.tasks.findOne({'_id': task_id},
-											{'_id': 0, 'correct_answer': 1})).correct_answer
-const status = user_answer == correct_answer ? 'correct' : 'not correct'
-await schema.tasks.updateOne({'_id': task_id},
-								{$set: {"attempts.$[attempt].end_timestamp": Date.now(), "attempts.$[attempt].status": status, "attempts.$[attempt].user_answer": user_answer}},
-								{"arrayFilters": [{"attempt.status": 'in progress'}]})
-if (status == 'not correct')
-	await schema.tasks.updateOne({'_id': task_id}, {$push: {"attempts": {'start_timestamp': Date.now(), 'status': 'in progress'}}})
-*/
-
-/* 3. Создание нового задания
-const class_ids = [ObjectId('637cf20192bec933530fc362'), ObjectId('637cf4044d77a3dc40b1e37b'), ObjectId('637cfef64d77a3dc40b1e3a5')]
-const homework = new schema.homeworks({
-	created_timestamp : Date.now(),
-	deadline_timestamp: Date.parse('2025-11-22T16:30:29.791+00:00'),
-	tasks             : [
-		{
-			categories: ['addittion', 'subtraction'],
-			count     : 5
-		},
-		{
-			categories: ['multiplication'],
-			count     : 3
-		},
-		{
-			categories: ['addittion', 'division'],
-			count     : 8
-		}
-	]
-})
-await homework.save()
-await schema.classes.updateMany({'_id': {$in: class_ids}}, {$push: {'homeworks': homework._id}})
-*/
-
-/* 4. Получение всех учеников класса
-const class_id = ObjectId('637cf20192bec933530fc362')
-const members = (await schema.classes.findOne({'_id': class_id}, {'_id': 0, 'members': 1})).members
-const result = await schema.users.find({'_id': {$in: members}, 'role': 'pupil'})
-*/
-
-/* 5. Удаление класса
-const class_id = ObjectId('637d31e9eb3701aff0787c0c')
-const homework_ids = (await schema.classes.findOne({'_id': class_id}, {'_id': 0, 'homeworks': 1})).homeworks
-if (homework_ids.length > 0){
-	const response = (await schema.classes.aggregate([
-		{$unwind: '$homeworks'},
-		{$group: {'_id': '$homeworks', 'count': {$sum: 1}}},
-		{$match: {"$expr": {"$in": ["$_id", homework_ids]}, "count": 1}},
-		{$project: {'_id': 1}}
-	])).map(obj => obj._id)
-	await schema.homeworks.deleteMany({'_id': {$in: response}})
-}
-await schema.classes.deleteOne({'_id': class_id})
-*/
-
-/* 6. Получение домашнего задания и его прогресса
-const user_id = ObjectId('637cef8a42b25ba8ee08ece8')
-const homework_ids = (await schema.classes.findOne({'members': user_id}, {'_id': 0, 'homeworks': 1})).homeworks
-const homework = await schema.homeworks.findOne({'_id': {$in: homework_ids}, 'deadline_timestamp': {$gte: (new Date).toISOString()}}, {'_id': 0})
-if (homework != null){
-	const task_ids = (await schema.users.findOne({'_id': user_id}, {'_id': 0, 'tasks': 1})).tasks
-	const result = await schema.tasks.aggregate([{$match: {'_id': {$in: task_ids}}},
-		{$unwind: {'path': '$attempts'}},
-		{$match: {'attempts.status': 'correct', 'attempts.end_timestamp': {$gte: homework.created_timestamp, $lte: homework.deadline_timestamp}}},
-		{$project: {'_id': '$_id', 'categories': '$categories'}}
-	])
-}
-*/
-
-/* 7. Создание нового пользователя (ученик)
-const user = new schema.users({
-	email: 'mahalichev.n@gmail.com',
-	password: 'mahalichev321',
-	first_name: 'Никита',
-	last_name: 'Махаличев',
-	role: 'pupil'
-})
-await user.save()
-*/
-
-/* 8. Создание нового пользователя (учитель)
-const user = new schema.users({
-	email: 'mahalichev.n@gmail.com',
-	password: 'mahalichev321',
-	first_name: 'Никита',
-	last_name: 'Махаличев',
-	role: 'pupil'
-})
-await user.save()
-*/
-
-/* 9. Получение пользователя по адресу почты
-const email = 'mahalichev.n@gmail.com'
-const result = await schema.users.findOne({'email': email})
-console.log(JSON.stringify(result))
-*/
-
-/* 10. Добавление ученика в класс
-const user_id = ObjectId('637ceff0484241578e5eb04e')
-const class_id = ObjectId('637cf20192bec933530fc362')
-await schema.classes.updateOne({'members': user_id}, {$pull: {'members': user_id}})
-await schema.classes.updateOne({'_id': class_id}, {$push: {'members': user_id}})
-*/
-
-/* 11. Получение истории действий пользователя
-const user_id = ObjectId('637cef8a42b25ba8ee08ece8')
-const result = (await schema.users.findOne({'_id': user_id}, {'_id': 0, 'history': 1})).history
-*/
-
-/* 12. Получение истории действий всех пользователей
-const result = await schema.users.find({'history': {$type: 'array', $ne: []}}, {'history': 1})
-*/
-
-/* 13. Фильтрация системных логов по уровням DEBUG и INFO
-const filter = ["DEBUG", "INFO"]
-const result = await schema.logs.find({'level': {$in: filter}})
-*/
