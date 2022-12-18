@@ -95,7 +95,6 @@ router.get("/personal/homeworks", async (req, res) => {
 
 // get task by categories; if unsolved task exists, return it instead of creating a new task
 router.get("/task", async (req, res) => {
-	console.log("GET /task");
 	await logEnterEndpoint(req);
 	if(!req.query.categories) {
 		await logPretty(LOG_LEVEL.warning, req,
@@ -106,13 +105,10 @@ router.get("/task", async (req, res) => {
 	}
 	const categories = req.query.categories.split(" ").sort();
 	await logPretty(LOG_LEVEL.debug, req, `categories=${categories}`);
-	console.log(`Got cookies: ${JSON.stringify(req.cookies)}`);
 	const userId = req.cookies.userId;
 	const userRole = req.cookies.userRole;
-	console.log("User id:", userId, typeof userId);
 	await logPretty(LOG_LEVEL.debug, req, `user id=${userId}`);
 	if(userId === undefined) {
-		console.log(`Sending a task without saving`);
 		await logPretty(LOG_LEVEL.debug, req, `User not authenticated. ` +
 			`Sending a task without saving`);
 		const task = taskGenerator(categories);
@@ -138,10 +134,8 @@ router.get("/task", async (req, res) => {
 		const task = taskGenerator(categories);
 		await logPretty(LOG_LEVEL.debug, req, `Generated task: ${JSON.stringify(task)}`);
 		const taskObject = new schema.tasks(task);
-		console.log(`Mongo task document: ${taskObject}`);
 		await taskObject.save();
 		const attemptObject = new schema.attempts({});
-		console.log(`Mongo attempt document: ${attemptObject}`);
 		await logPretty(LOG_LEVEL.debug, req, `Mongo attempt document: ${JSON.stringify(attemptObject)}`);
 		await schema.tasks.updateOne({'_id': taskObject._id},
 			{$set: {"attempts": [attemptObject]}});
@@ -153,7 +147,6 @@ router.get("/task", async (req, res) => {
 		res.json(findUpdated);
 		return;
 	}
-	console.log(`Found fitting pending task: ${result}`);
 	await logPretty(LOG_LEVEL.debug, req, `Found fitting pending task: ${result}`);
 	res.json(result);
 });
@@ -275,10 +268,6 @@ router.post("/classes/homeworks", async (req, res) => {
 	const deadline = new Date(req.body.deadline);
 	const homeworkTasks = req.body.homeworkTasks;
 	const userRole = req.cookies.userRole;
-	console.debug(`classIds: ${classIds}\n`,
-		`deadline: ${deadline}\n`,
-		`homeworkTasks: ${homeworkTasks}\n`,
-		`userRole: ${userRole}`);
 	if(userRole !== "teacher") {
 		res.json({status: 401, message: "Log in as a teacher to proceed"});
 		return;
@@ -339,7 +328,6 @@ router.get("/homeworks", async (req, res) => {
 				{$match: {'datetime': {$gte: (new Date(homeworks[i].created_timestamp)), $lte: (new Date(homeworks[i].deadline_timestamp))}}},
 				{$project: {'categories': '$categories'}}
 			])).map(obj => obj.categories);
-			console.log(attempts);
 			for (let j = 0; j < homeworks[i].tasks.length; j++){
 				homeworks[i].tasks[j].progress = 0;
 				for (let k = 0; k < attempts.length; k++){
@@ -473,13 +461,11 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 	const cls = await schema.classes.findOne({ $expr: {
 		$in: [userId, "$members"]
 	}, _id: classId});
-	console.debug(cls);
 	if(!cls) {
 		res.json({status: 404, message: "Could not access the class"});
 		return;
 	}
 	const pupils = await schema.users.find({_id: {$in: cls.members}, role: "pupil"});
-	console.debug(pupils);
 	const data = pupils.map( pupil => {
 		return {
 			_id: pupil._id,
@@ -497,7 +483,6 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 			lastDistractionSolutionTime: "1970-01-01T00:05:40.000Z"
 		};
 	} );
-	console.debug(data);
 	res.json({status: 200, message: "Ok", data: data});
 });
 
@@ -513,7 +498,6 @@ router.get("/classes", async (req, res) => {
 	const classesByTeacher = await schema.classes.find({ $expr: {
 			$in: [userId, "$members"]
 		}});
-	console.debug(classesByTeacher);
 	const result = []
 	for(const cls of classesByTeacher) {
 		const classInfo = {};
@@ -521,17 +505,11 @@ router.get("/classes", async (req, res) => {
 		classInfo.title = cls.title;
 		classInfo.pupilCount = cls.members.length - 1;
 		const hwInfo = await lastPublishedHWData(cls);
-		console.debug("hwInfo == ", hwInfo);
-		console.debug({
-			...classInfo,
-			...hwInfo
-		});
 		result.push({
 			...classInfo,
 			...hwInfo
 		});
 	}
-	console.debug(result);
 	res.json({status: 200, message: "Ok", result: result, totalElements: classesByTeacher.length});
 });
 
@@ -580,7 +558,6 @@ router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 
 // register
 router.post("/register", async (req, res) => {
-	console.log("POST /register");
 	await logEnterEndpoint(req);
 	const creatableRoles = ["teacher", "pupil"];
 	const email = req.body.email;
@@ -598,7 +575,6 @@ router.post("/register", async (req, res) => {
 	}
 	const userWithSameEmail = await schema.users.findOne({email: email});
 	if(userWithSameEmail) {
-		console.log(`Found user with the same email: ${userWithSameEmail}`);
 		await logPretty(LOG_LEVEL.warning, req, `POST /register: `+
 			`Found user with the same email: ${userWithSameEmail}. Exiting`);
 		res.json({status: 409, message: `User with email '${email}' already exists`});
@@ -612,7 +588,6 @@ router.post("/register", async (req, res) => {
 		role: role
 	});
 	await newUser.save();
-	console.log(`Created user: ${newUser}`);
 	await logPretty(LOG_LEVEL.debug, req, `Created user: ${newUser}`);
 	res.json({status: 201, message: "created"});
 });
@@ -622,13 +597,11 @@ router.post("/login", async (req, res) => {
 	await logEnterEndpoint(req);
 	const email = req.body.email;
 	const password = req.body.password;
-	console.log(`Got POST to /login with email="${email}", password="${password}"`);
 	if(!email || !password) {
 		res.json({status: 403, message: "Wrong credentials"});
 		return;
 	}
 	const user = await schema.users.findOne({'email': email});
-	console.log(`Found user: ${user}`);
 	if(!user) {
 		res.json({status: 403, message: "Wrong credentials"});
 		return;
@@ -709,10 +682,8 @@ router.get("/whoami", async (req, res) => {
 });
 
 router.get("/logout", async (req, res) => {
-	console.log("GET /logout");
 	await logEnterEndpoint(req);
 	const userId = req.cookies.userId;
-	console.log(`Cookie userId: ${userId}`);
 	if(userId === undefined) {
 		res.json({status: 401, message: "Must log in first to logout"});
 		return;
