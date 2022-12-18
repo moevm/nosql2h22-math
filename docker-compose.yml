@@ -17,7 +17,7 @@ services:
     links:
       - mongo
   mongo:
-    image: mongo:latest
+    image: mongo:6.0.3
     volumes:
       - db-content:/data/db
     #ports:
