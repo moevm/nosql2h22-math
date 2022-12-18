@@ -1,81 +1,98 @@
-import React, { useState, useEffect } from 'react'
-import {FilterFilled} from '@ant-design/icons'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {useParams} from "react-router-dom";
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import {Button, Checkbox, Col, Row, Table} from 'antd'
-import {Button as MUIButton, IconButton, TextField} from '@mui/material'
-import styles from '../styles/Class.module.css'
+import {Table} from 'antd';
+import {IconButton, TextField} from '@mui/material';
+import styles from '../styles/Class.module.css';
 
 export default function Class(){
-    let classID = '1231'
+    const instance = axios.create({
+        baseURL: 'http://localhost:8000',
+        withCredentials: true
+    });
 
-    let classInvite = `localhost:5173/i/${classID}`
+    const [totalElements, setTotalElements] = useState(0);
 
-    let className = '1А'
+    const [homeworks, setHomeworks] = useState(<></>);
 
-    let homeworks_response = [
-        {deadline_timestamp: "11 января 2023",
-         tasks: [{categories: ['сложение', 'умножение'],
-                  count: 10,
-                  progress: 9},
-                 {categories: ['вычитание', 'умножение', 'деление'],
-                  count: 5,
-                  progress: 5},
-                 {categories: ['сложение'],
-                  count: 15,
-                  progress: 3}]},
-        {deadline_timestamp: "13 января 2023",
-         tasks: [{categories: ['сложение'],
-                  count: 30,
-                  progress: 21},
-                 {categories: ['вычитание', 'деление'],
-                  count: 5,
-                  progress: 3}]},
-        {deadline_timestamp: "15 января 2023",
-         tasks: [{categories: ['сложение', 'вычитание', 'умножение', 'деление'],
-                  count: 10,
-                  progress: 5}]}
-    ]
+    const [className, setClassName] = useState('');
 
-    const [dataSource, setDataSource] = useState([
-        {
-            key: '1',
-            pupil: 'Ааа аааа',
-            pupil_id: '123',
-            login: 'asd@gmail.com',
-            last_activity: '15.01.2023 00:01:03',
-            homework_progress: 30,
-            addition_fails: 5,
-            subtraction_fails: 2,
-            multiplication_fails: 10,
-            division_fails: 12,
-            distraction_time: '22.01.2023 01:14:10'
-        },{
-            key: '2',
-            pupil: 'ваыва аааа',
-            pupil_id: '124',
-            login: 'a4123@gmail.com',
-            last_activity: '15.02.2023 12:01:03',
-            homework_progress: 5,
-            addition_fails: 2,
-            subtraction_fails: 5,
-            multiplication_fails: 3,
-            division_fails: 1,
-            distraction_time: '25.01.2023 01:14:10'
-        },{
-            key: '3',
-            pupil: 'йцуйцу йцууйц',
-            pupil_id: '333',
-            login: 'wewqeqwed@gmail.com',
-            last_activity: '11.01.2023 00:01:03',
-            homework_progress: 20,
-            addition_fails: 1,
-            subtraction_fails: 0,
-            multiplication_fails: 3,
-            division_fails: 5,
-            distraction_time: '22.01.2023 01:10:10'
-        },
-    ]);
+    const [dataSource, setDataSource] = useState([]);
+
+    var {id} = useParams();
+
+    const getHometasks = async() => {
+        const homeworks_response = await instance.get(`/homeworks?classId=${id}`);
+        if (homeworks_response.data.status == 200){
+            var homeworks_list = homeworks_response.data.homeworks;
+            let i = 0;
+            const result = <div className={styles.homeworks}>
+                            {homeworks_list.map(homework => (
+                            <div key={i++} className={styles.homework}>
+                                <div className={styles.title}>
+                                    <div>Домашнее задание</div>
+                                    <div>От {`${homework.created_timestamp.substring(0, 10)} ${homework.created_timestamp.substring(11, 19)}`}</div>
+                                    <div>До {`${homework.deadline_timestamp.substring(0, 10)} ${homework.deadline_timestamp.substring(11, 19)}`}</div>
+                                </div>
+                                <ol>
+                                    {homework.tasks.map(task =>
+                                        <li key={i++}>{task.categories.join(" и ") + " - " + task.count}</li>
+                                    )}
+                                </ol>
+                            </div>
+                            ))}
+                        </div>
+            setHomeworks(result)
+        }
+    }
+
+    const responseToDataSource = (response) => {
+        var i = 0;
+        var result = [];
+        var pupilsArray = response.data;
+        setTotalElements(pupilsArray.length);
+        pupilsArray.map(pupil => {
+            result.push({
+                key: i++,
+                pupil: pupil.fullName,
+                pupil_id: pupil._id,
+                login: pupil.email,
+                last_activity: `${pupil.lastActivity.timestamp.substring(0, 10)} ${pupil.lastActivity.timestamp.substring(11, 19)}`,
+                homework_progress: pupil.homeworkProgress,
+                addition_fails: pupil.mistakes.addition,
+                subtraction_fails: pupil.mistakes.subtraction,
+                multiplication_fails: pupil.mistakes.multiplication,
+                division_fails: pupil.mistakes.division,
+                distraction_time: pupil.lastDistractionTime
+            });
+        });
+        setDataSource(result);
+    };
+
+    const updateTable = () => {
+        instance.get(`/classes/${id}/stats`)
+                    .then(res => {
+                        if (res.data.status == 200)
+                            responseToDataSource(res.data)
+                    });
+    }
+
+    useEffect(() => {
+        instance.post('/add_action', {action: 'Открытие страницы',
+                                      content: `Открыта страница класса ${id}`});
+        instance.get(`/class/${id}`).then(res => setClassName(res.data.title));
+        getHometasks();
+        updateTable();
+    }, []);
+
+    const classInvite = `localhost:5173/join/${id}`
+
+    const deleteUser = async (userId) => {
+        await instance.post(`/classes/${id}/delete-pupil`, {userId: userId});
+        updateTable();
+    }
 
     const columns = [
         {
@@ -134,12 +151,17 @@ export default function Class(){
         },
         {
           title: '',
-          key: '',
-          render: (_, record) => <a href={`${classID}/delete/${record.pupil_id}`}>
-                                        <IconButton color="primary" aria-label="upload picture" component="label">
-                                            <ClearOutlinedIcon style={{color: 'red', fontSize: 'medium'}}/>
-                                        </IconButton>
-                                    </a>,
+          key: 'x',
+          onCell: (record, rowIndex) => {
+            return {
+                onClick: (ev) => {
+                    deleteUser(record.pupil_id)
+                },
+            };
+          },
+          render: (_, record) => <IconButton color="primary" aria-label="upload picture" component="label">
+                                    <ClearOutlinedIcon style={{color: 'red', fontSize: 'medium'}}/>
+                                 </IconButton>,
         },
     ];
 
@@ -147,28 +169,10 @@ export default function Class(){
         console.log('params', pagination, filters, sorter, extra);
     };
 
-    let i = 0
-
-    let homeworks = <div className={styles.homeworks}>
-                        {homeworks_response.map(homework => (
-                        <div key={i++} className={styles.homework}>
-                            <div className={styles.title}>
-                                <div>Домашнее задание</div>
-                                <div>До {homework.deadline_timestamp}</div>
-                            </div>
-                            <ol>
-                                {homework.tasks.map(task =>
-                                    <li key={i++}>{task.categories.join(' и ') + ' - ' + task.count}</li>
-                                )}
-                            </ol>
-                        </div>
-                        ))}
-                    </div>
-
     return (
     <>
         <div className={styles.name}>Класс {className}</div>
-        <Table dataSource={dataSource} columns={columns} pagination={false} onChange={onchange}/>
+        <Table dataSource={dataSource} columns={columns} pagination={{total: totalElements, showQuickJumper: true}} onChange={onchange}/>
         <div className={styles.class_link}>
             <TextField style={{width: 360, height: 60}}
                         id="classinvite"

@@ -4,6 +4,7 @@ import Task from './pages/components/Task.jsx'
 import Register from './pages/components/Register.jsx'
 import Login from './pages/components/Login.jsx'
 import Stats from './pages/components/Stats.jsx'
+import Join from './pages/components/Join.jsx'
 import UserHistory from './pages/components/UserHistory.jsx'
 import Navigation from './pages/components/Navigation.jsx'
 import AddHometask from './pages/components/AddHometask.jsx'
@@ -22,6 +23,7 @@ function App() {
                 <Route path='/register' element={<Register navTrigger={navTrigger} setNavTrigger={setNavTrigger}/>} />
 
                 <Route path='/' element={<Task />} />
+                <Route path='/join/:id' element={<Join />} />
                 <Route path='/stats/:id' element={<Stats />} />
                 <Route path='/user_history/:id' element={<UserHistory />} />
 

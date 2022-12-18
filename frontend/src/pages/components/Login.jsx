@@ -39,7 +39,9 @@ export default function Login({navTrigger, setNavTrigger}){
                                   switch(response.data.userRole){
                                       case "teacher": navigate("../classes"); break;
                                       case "administrator": navigate("../logs"); break;
-                                      default: navigate("../"); break;}});
+                                      default: navigate("../"); break;};
+                                  instance.post('/add_action', {action: 'Вход в систему',
+                                                                content: `Вход пользователя в систему`});});
     };
 
     return (

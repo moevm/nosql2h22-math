@@ -3,7 +3,7 @@ const schema = require("./schema");
 async function initTestUsers() {
     const existingUsers = await schema.users.find();
     console.log(`Users in DB: ${existingUsers}`);
-    if(!existingUsers) {
+    if(existingUsers == 0) {
         console.log("Users not found (likely a fresh install); creating test users");
         const admin = new schema.users({
             email: "admin@nosql7.com",
@@ -14,8 +14,8 @@ async function initTestUsers() {
         const pupil = new schema.users({
             email: "john.doe@example.com",
             password: "password",
-            firstName: "John",
-            lastName: "Doe",
+            first_name: "John",
+            last_name: "Doe",
             role: "pupil",
             tasks: [],
             history: []
@@ -23,8 +23,8 @@ async function initTestUsers() {
         const teacher = new schema.users({
             email: "jane.doe@example.com",
             password: "password",
-            firstName: "Jane",
-            lastName: "Doe",
+            first_name: "Jane",
+            last_name: "Doe",
             role: "teacher",
             tasks: [],
             history: []

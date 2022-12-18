@@ -32,6 +32,8 @@ export default function Navigation({navTrigger, setNavTrigger}) {
                                           null)}, [navTrigger]);
     
     const logoutUser = async() => {
+        instance.post('/add_action', {action: 'Выход',
+                                      content: `Выход пользователя из системы`});
         await instance.get("/logout");
         setUser({id: "",
                  firstName: "",

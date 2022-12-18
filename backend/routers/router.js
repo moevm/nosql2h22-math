@@ -424,7 +424,7 @@ router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 		await pushLog(LOG_LEVEL.debug, `Other class with this pupil removed: ${classWithPupil}`);
 	}
 	await schema.classes.updateOne({_id: classId}, {$push: {members: userId}});
-	res.json({status: 200, message: "Ok"});
+	res.json({status: 200, message: "Joined"});
 });
 
 // delete pupil from class
@@ -491,6 +491,7 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 	console.debug(pupils);
 	const data = pupils.map( pupil => {
 		return {
+			_id: pupil._id,
 			fullName: pupil.last_name + " " + pupil.first_name,
 			email: pupil.email,
 			lastActivity: pupil.history.reduce( (a, b) => a && (a.timestamp > b.timestamp) ? a : b, null ),
@@ -541,6 +542,7 @@ router.get("/classes", async (req, res) => {
 	const result = []
 	for(const cls of classesByTeacher) {
 		const classInfo = {};
+		classInfo._id = cls._id;
 		classInfo.title = cls.title;
 		classInfo.pupilCount = cls.members.length - 1;
 		const hwInfo = await lastPublishedHWData(cls);
@@ -560,8 +562,16 @@ router.get("/classes", async (req, res) => {
 		});
 	}
 	console.debug(result);
-	res.json({status: 200, message: "Ok", result: result});
+	res.json({status: 200, message: "Ok", result: result, totalElements: classesByTeacher.length});
 });
+
+router.get("/class/:id([0-9a-f]+)", async (req, res) => {
+	await pushLog(LOG_LEVEL.debug, `GET /class with cookies: ${JSON.stringify(req.cookies)}, ` +
+		`query: ${JSON.stringify(req.query)}`);
+	const classId = req.params.id;
+	const class_ = await schema.classes.findOne({_id: ObjectId(classId)});
+	res.json(class_);
+})
 
 router.get("/classes-ids", async (req, res) => {
 	const userId = ObjectId(req.cookies.userId);
@@ -573,7 +583,7 @@ router.get("/classes-ids", async (req, res) => {
 	const classes = await schema.classes.find({ $expr: {
 		$in: [userId, "$members"]
 	}});
-	res.json({status: 200, message: "Ok", data: classes.map(cls => cls._id)});
+	res.json({status: 200, message: "Ok", data: classes.map(cls => {return {_id: cls._id, title: cls.title}})});
 });
 
 // delete a class

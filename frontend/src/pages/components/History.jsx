@@ -213,6 +213,7 @@ export default function History(){
         switch (sorter.field){
             case 'timestamp':
                 filterNew.datetime_sorter = (sorter.order == undefined) ? '' : sorter.order;
+                break;
             default:
                 break;
         };
