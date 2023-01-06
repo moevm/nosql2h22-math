@@ -179,21 +179,60 @@ router.get("/personal/attempts", async (req, res) => {
 	const limit = Number(req.query.limit);
 	const startDatetime = req.query.start_datetime;
 	const endDatetime = req.query.end_datetime;
-	const requestedUserId = req.query.userId; // если запрос со стороны учителя, то userId !== requestedUserId
-	const sortByDatetime = req.query.sortByDatetime; // "asc" | "desc" | null
-	const sortBySolvingTime = req.query.sortBySolvingTime; // "asc" | "desc" | null
-	const taskContent = req.query.taskContent;
-	const categories = req.query.categories;
-	const answer = req.query.answer;
-	const verdict = req.query.verdict; // null | "correct" | "not correct" | "in progress"
+	const sortByDatetime = req.query.datetime_sorter; // "ascend" | "descend" | ""
+	const sortBySolvingTime = req.query.solving_time_sorter; // "ascend" | "descend" | ""
+	const categories = req.query.categories.split(",");
+	const verdicts = req.query.verdicts.split(","); // "correct" | "not correct"
+	const mode = req.query.modes; // "single" | "jointly" | "as_part_of"
+
+	const debug = req.query.debug;
+	if (debug) {
+		for (const key in req.query) {
+			if (typeof (req.query[key]) === "string" || typeof (req.query[key]) === "undefined") {
+				console.log(`${key}: ${req.query[key]}`);
+			}
+		}
+	}
 	const taskIds = (await schema.users.findOne({"_id": ObjectId(userId)}, {"_id": 0, "tasks": 1})).tasks;
-	const filter = {}
+	let filter = {};
+	const sorter = {};
 	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["datetime"] = {$gte: (new Date(startDatetime))}
 	if ((endDatetime !== '') && (startDatetime === ''))
 		filter["datetime"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["datetime"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	if(debug) console.log(verdicts);
+	if(verdicts) {
+		filter["verdict"] = {$in: verdicts}
+	}
+	if(debug) console.log(filter);
+	if(debug) console.log(mode, "of type", typeof mode);
+	if(mode !== "single") {
+		filter = {...filter, categories: categories.sort()}
+	}
+	else {
+		filter = {...filter,
+			$expr: {
+				$ne: [{
+					$setIntersection: [categories, "$categories"]},
+					[]
+				]
+			}
+		}
+	}
+	if(debug) console.log(filter);
+	if(debug) console.log(sorter);
+	if(sortBySolvingTime) {
+		sorter.solvingTime = sortBySolvingTime === "ascend" ? 1 : -1;
+	}
+	if(sortByDatetime) {
+		sorter.datetime = sortByDatetime === "ascend" ? 1 : -1;
+	}
+	if(debug) console.log(sorter);
+	if(!sorter.solvingTime && !sorter.datetime) sorter.datetime = -1;
+	if(debug) console.log(sorter);
+
 	const attemptsCount = (await schema.tasks.aggregate([
 		{$match: {'_id': {$in: taskIds}}},
 		{$unwind: {'path': '$attempts'}},
@@ -218,7 +257,7 @@ router.get("/personal/attempts", async (req, res) => {
 					'answer': '$attempts.user_answer',
 					'verdict': '$attempts.status'}},
 		{$match: filter},
-		{$sort: {'datetime': -1}}
+		{$sort: sorter}
 	]).skip((page - 1) * limit).limit(limit);
 	res.json({attempts: attempts, totalElements: attemptsCount, status: 200});
 });

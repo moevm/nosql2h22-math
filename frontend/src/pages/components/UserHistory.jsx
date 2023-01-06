@@ -34,7 +34,7 @@ export default function PupilHistory(){
         end_datetime: '',
         datetime_sorter: "descend",
         categories: ["addition", "subtraction", "multiplication", "division"],
-        modes: ["single", "jointly", "as_part_of"],
+        modes: ["single"],
         solving_time_sorter: '',
         verdicts: ["correct", "not correct"],
         page: 1,
@@ -63,7 +63,7 @@ export default function PupilHistory(){
         filterNew.start_datetime = query.get('start_datetime') == null ? '' : query.get('start_datetime');
         filterNew.end_datetime = query.get('end_datetime') == null ? '' : query.get('end_datetime');
         filterNew.categories = query.get('categories') == null ? ["addition", "subtraction", "multiplication", "division"] : query.get('categories').split(',');
-        filterNew.modes = query.get('modes') == null ? ["single", "jointly", "as_part_of"] : query.get('modes').split(',');
+        filterNew.modes = query.get('modes') == null ? ["single"] : query.get('modes').split(',');
         filterNew.verdicts = query.get('verdicts') == null ? ["correct", "not correct"] : query.get('verdicts').split(',');
         setFilter(filterNew);
     }, []);
@@ -136,7 +136,7 @@ export default function PupilHistory(){
 
     const categoriesReset = () => {
         setFilter({...filter, categories: ["addition", "subtraction", "multiplication", "division"],
-                              modes: ["single", "jointly", "as_part_of"]
+                              modes: ["single"]
         });
     };
     
@@ -162,13 +162,7 @@ export default function PupilHistory(){
                 <Checkbox.Group style={{margin: '4px'}} value={filter.modes} onChange={handleCategories('modes')}>
                     <Col>
                         <Row>
-                            <Checkbox value="single">Одиночные</Checkbox>
-                        </Row>
-                        <Row>
-                            <Checkbox value="jointly">Совместно</Checkbox>
-                        </Row>
-                        <Row>
-                            <Checkbox value="as_part_of">В составе</Checkbox>
+                            <Checkbox value="single">Нестрогое совпадение</Checkbox>
                         </Row>
                     </Col>
                 </Checkbox.Group>
@@ -180,7 +174,7 @@ export default function PupilHistory(){
             </div>
         ),
         filterIcon: () => (
-            <FilterFilled style={{color: (filter.categories.length + filter.modes.length) < 7 ? '#1890ff' : undefined}}/>
+            <FilterFilled style={{color: (filter.categories.length + filter.modes.length) < 5 ? '#1890ff' : undefined}}/>
         )
     });
 
