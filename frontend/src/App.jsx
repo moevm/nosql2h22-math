@@ -12,6 +12,7 @@ import Classes from './pages/components/Classes.jsx'
 import Class from './pages/components/Class.jsx'
 import Logs from './pages/components/Logs.jsx'
 import History from './pages/components/History.jsx'
+import Upload from "./pages/components/Upload";
 
 function App() {
     const [navTrigger, setNavTrigger] = useState(false)
@@ -33,6 +34,7 @@ function App() {
 
                 <Route path='/logs' element={<Logs />} />
                 <Route path='/history' element={<History />} />
+                <Route path='/upload' element={<Upload/>} />
             </Routes>
         </BrowserRouter>
     );

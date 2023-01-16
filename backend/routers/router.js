@@ -1,28 +1,66 @@
 const express = require('express');
 const router  = express.Router();
+const multer  = require('multer');
+const upload = multer({
+	fileFilter: (req, file, cb) => {
+		console.debug(file.mimetype, file.originalname);
+		if(file.mimetype === "application/json" && file.originalname.endsWith("json")) {
+			return cb(null, true);
+		}
+		cb("Error: file must be json");
+	}
+}).single("data");
 const ObjectId = require('mongoose').Types.ObjectId;
 const schema = require('../database/schema');
 
 const taskGenerator = require('../task_generator');
+const mongoose = require("mongoose");
 const pushLog = require('../push_log').pushLog;
 const LOG_LEVEL = require('../push_log').LOG_LEVEL;
 const lastPublishedHWData = require('../complex_queries').lastPublishedHWData;
 
 // export database
 router.get('/', async (req,res) => {
-	// const userId = req.session.userId;
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("User must be an administrator to export data")
-	res.json({databaseContent: "comes here"});
+	res.json({
+		histories: await schema.histories.find({}),
+		users: await schema.users.find({}),
+		tasks: await schema.tasks.find({}),
+		classes: await schema.classes.find({}),
+		homeworks: await schema.homeworks.find({}),
+		logs: await schema.logs.find({}),
+		attempts: await schema.attempts.find({})
+	});
 });
 
 // import database (replace existing)
 router.post("/", async (req, res) => {
-	const databaseContent = req.body.databaseContent;
-	// const userId = req.session.userId;
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("User must be an administrator to reset data")
-	res.json({message: "Ok"});
+	upload(req, res, async (err) => {
+		if(err) console.error(err);
+		else console.log(JSON.stringify(typeof req.file));
+		let text;
+		try {
+			text = req.file.buffer.toString();
+		}
+		catch (e) {
+			res.status(415).json({message: "File must be json"});
+			return;
+		}
+		const content = JSON.parse(text);
+		const expectedCollections = ["histories", "users", "tasks", "classes",
+			"homeworks", "logs", "attempts"];
+		const fileHasAll = Object.keys(content).every((key) => {
+			return expectedCollections.indexOf(key) !== -1
+		});
+		if(!fileHasAll) {
+			res.status(400).send("В файле представлены не все коллекции. Восстановление отменено.");
+			return;
+		}
+		for(const key of expectedCollections) {
+			await schema[key].deleteMany();
+			await schema[key].insertMany(content[key]);
+		}
+		res.send("Успех. Эту вкладку можно закрыть.");
+	});
 });
 
 // submit attempt, return verdict (ok/not ok)

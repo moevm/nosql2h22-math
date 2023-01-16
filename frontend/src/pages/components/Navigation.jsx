@@ -2,6 +2,8 @@ import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import {NavLink, useNavigate} from 'react-router-dom';
 import styles from '../styles/Navigation.module.css';
+import Download from "./Download";
+import Upload from "./Upload";
 
 
 export default function Navigation({navTrigger, setNavTrigger}) {
@@ -105,6 +107,16 @@ export default function Navigation({navTrigger, setNavTrigger}) {
                             style={({ isActive }) =>
                             isActive ? activeStyle : undefined
                             }>История действий</NavLink>
+                        <Download
+                            url={"http://localhost:8000"}
+                            filename={"backup.json"}
+                        />
+                        <NavLink
+                            to={"/upload"}
+                            style={({ isActive }) =>
+                                isActive ? activeStyle : undefined
+                            }>Импорт
+                        </NavLink>
                     </div>
                     <div className={styles.right}>
                         <div>Administrator</div>
