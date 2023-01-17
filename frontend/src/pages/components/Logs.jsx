@@ -24,7 +24,6 @@ export default function Logs(){
     const [filter, setFilter] = useState({
         start_datetime: '',
         end_datetime: '',
-        datetime_sorter: "descend",
         levels: ["FINEST", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         content_search: '',
         page: 1,
@@ -162,7 +161,7 @@ export default function Logs(){
             query.set('levels', filter.levels);
             query.set('content_search', filter.content_search);
             navigate('?' + query.toString());
-            instance.get(`/logs?${query.toString()}&limit=${filter.limit}&datetime_sorter=${filter.datetime_sorter}`)
+            instance.get(`/logs?${query.toString()}&limit=${filter.limit}`)
                     .then(res => {
                         if (res.data.status == 200)
                             responseToDataSource(res.data);
@@ -175,8 +174,6 @@ export default function Logs(){
             dataIndex: 'timestamp',
             key: 'date',
             ...getColumnDateFilterProps(),
-            defaultSortOrder: 'descend',
-            sorter: () => {},
             fixed: 'left',
             width: 200,
         },
@@ -200,12 +197,6 @@ export default function Logs(){
         var filterNew = {...filter};
         filterNew.page = pagination.current;
         filterNew.limit = pagination.pageSize;
-        switch (sorter.field){
-            case 'timestamp':
-                filterNew.datetime_sorter = (sorter.order == undefined) ? '' : sorter.order;
-            default:
-                break;
-        };
         setFilter(filterNew);
     };
 

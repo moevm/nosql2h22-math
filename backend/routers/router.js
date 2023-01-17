@@ -830,7 +830,11 @@ router.get("/history", async (req, res) => {
 	const startDatetime = req.query.start_datetime;
 	const endDatetime = req.query.end_datetime;
 	const page = Number(req.query.page);
-	const limit = Number(req.query.limit);
+	const limit = req.query.limit ? Number(req.query.limit) : 10;
+	const roles = req.query.roles.split(",");
+	const loginSearch = req.query.login_search;
+	const actionSearch = req.query.action_search;
+	const contentSearch = req.query.content_search;
 	const filter = {};
 	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime))}
@@ -838,6 +842,20 @@ router.get("/history", async (req, res) => {
 		filter["timestamp"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	filter.role = {$in: roles};
+	if(loginSearch) filter.login = {
+		$regex: loginSearch.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&'),
+		$options: "i"
+	}
+	if(actionSearch) filter.action = {
+		$regex: actionSearch.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&'),
+		$options: "i"
+	}
+	if(contentSearch) filter.content = {
+		$regex: contentSearch.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&'),
+		$options: "i"
+	}
+
 	const historyCount = (await schema.users.aggregate([
 		{$match: {}},
 		{$unwind: {'path': '$history'}},
@@ -880,14 +898,12 @@ router.post("/add_action", async (req, res) => {
 
 // get logs by...
 router.get("/logs", async (req, res) => {
-	// const adminId = req.session.userId;
-	const sortByDateTime = req.query.sortByDateTime; // null | "asc" | "desc"
-	const logLevels = req.query.logLevels;
-	const messageText = req.query.message;
 	const startDatetime = req.query.start_datetime;
 	const endDatetime = req.query.end_datetime;
 	const page = Number(req.query.page);
-	const limit = Number(req.query.limit);
+	const limit = req.query.limit ? Number(req.query.limit) : 10;
+	const levels = req.query.levels.split(",");
+	const contentSearch = req.query.content_search;
 	var filter = {};
 	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime))}
@@ -895,7 +911,12 @@ router.get("/logs", async (req, res) => {
 		filter["timestamp"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
-	
+	filter.level = {$in: levels};
+	if(contentSearch) filter.content = {
+		$regex: contentSearch.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&'),
+		$options: "i"
+	}
+
 	const logsCount = (await schema.logs.aggregate([
 		{$match: {}},
 		{$project: {'_id': 0,
