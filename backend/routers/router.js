@@ -1,5 +1,15 @@
 const express = require('express');
 const router  = express.Router();
+const multer  = require('multer');
+const upload = multer({
+	fileFilter: (req, file, cb) => {
+		console.debug(file.mimetype, file.originalname);
+		if(file.mimetype === "application/json" && file.originalname.endsWith("json")) {
+			return cb(null, true);
+		}
+		cb("Error: file must be json");
+	}
+}).single("data");
 const ObjectId = require('mongoose').Types.ObjectId;
 const schema = require('../database/schema');
 
@@ -9,19 +19,46 @@ const lastPublishedHWData = require('../complex_queries').lastPublishedHWData;
 
 // export database
 router.get('/', async (req,res) => {
-	// const userId = req.session.userId;
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("User must be an administrator to export data")
-	res.json({databaseContent: "comes here"});
+	res.json({
+		histories: await schema.histories.find({}),
+		users: await schema.users.find({}),
+		tasks: await schema.tasks.find({}),
+		classes: await schema.classes.find({}),
+		homeworks: await schema.homeworks.find({}),
+		logs: await schema.logs.find({}),
+		attempts: await schema.attempts.find({})
+	});
 });
 
 // import database (replace existing)
 router.post("/", async (req, res) => {
-	const databaseContent = req.body.databaseContent;
-	// const userId = req.session.userId;
-	// res.status(401).send("Log in to proceed")
-	// res.status(403).send("User must be an administrator to reset data")
-	res.json({message: "Ok"});
+	upload(req, res, async (err) => {
+		if(err) console.error(err);
+		else console.log(JSON.stringify(typeof req.file));
+		let text;
+		try {
+			text = req.file.buffer.toString();
+		}
+		catch (e) {
+			res.status(415).json({message: "File must be json"});
+			return;
+		}
+		const content = JSON.parse(text);
+		const expectedCollections = ["histories", "users", "tasks", "classes",
+			"homeworks", "logs", "attempts"];
+		const fileHasAll = Object.keys(content).every((key) => {
+			return expectedCollections.indexOf(key) !== -1
+		});
+		if(!fileHasAll) {
+			res.status(400).send("В файле представлены не все коллекции. Восстановление отменено.");
+			return;
+		}
+		for(const key of expectedCollections) {
+			await schema[key].deleteMany();
+			await schema[key].insertMany(content[key]);
+		}
+		res.send("Успех. Эту вкладку можно закрыть.");
+	});
 });
 
 // submit attempt, return verdict (ok/not ok)
@@ -166,21 +203,59 @@ router.get("/personal/attempts", async (req, res) => {
 	const limit = Number(req.query.limit);
 	const startDatetime = req.query.start_datetime;
 	const endDatetime = req.query.end_datetime;
-	const requestedUserId = req.query.userId; // если запрос со стороны учителя, то userId !== requestedUserId
-	const sortByDatetime = req.query.sortByDatetime; // "asc" | "desc" | null
-	const sortBySolvingTime = req.query.sortBySolvingTime; // "asc" | "desc" | null
-	const taskContent = req.query.taskContent;
-	const categories = req.query.categories;
-	const answer = req.query.answer;
-	const verdict = req.query.verdict; // null | "correct" | "not correct" | "in progress"
+	const sortByDatetime = req.query.datetime_sorter; // "ascend" | "descend" | ""
+	const sortBySolvingTime = req.query.solving_time_sorter; // "ascend" | "descend" | ""
+	const categories = req.query.categories.split(",");
+	const verdicts = req.query.verdicts.split(","); // "correct" | "not correct"
+	const mode = req.query.modes; // "single" | "jointly" | "as_part_of"
+
+	const debug = req.query.debug;
+	if (debug) {
+		for (const key in req.query) {
+			if (typeof (req.query[key]) === "string" || typeof (req.query[key]) === "undefined") {
+				console.log(`${key}: ${req.query[key]}`);
+			}
+		}
+	}
 	const taskIds = (await schema.users.findOne({"_id": ObjectId(userId)}, {"_id": 0, "tasks": 1})).tasks;
-	const filter = {}
+	let filter = {};
+	const sorter = {};
 	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["datetime"] = {$gte: (new Date(startDatetime))}
 	if ((endDatetime !== '') && (startDatetime === ''))
 		filter["datetime"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["datetime"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	if(debug) console.log(verdicts);
+	if(verdicts) {
+		filter["verdict"] = {$in: verdicts}
+	}
+	if(debug) console.log(filter);
+	if(debug) console.log(mode, "of type", typeof mode);
+	if(mode !== "single") {
+		filter = {...filter, categories: categories.sort()}
+	}
+	else {
+		filter = {...filter,
+			$expr: {
+				$ne: [{
+					$setIntersection: [categories, "$categories"]},
+					[]
+				]
+			}
+		}
+	}
+	if(debug) console.log(filter);
+	if(debug) console.log(sorter);
+	if(sortBySolvingTime) {
+		sorter.solvingTime = sortBySolvingTime === "ascend" ? 1 : -1;
+	}
+	if(sortByDatetime) {
+		sorter.datetime = sortByDatetime === "ascend" ? 1 : -1;
+	}
+	if(debug) console.log(sorter);
+	if(!sorter.solvingTime && !sorter.datetime) sorter.datetime = -1;
+	if(debug) console.log(sorter);
 	await logPretty(LOG_LEVEL.debug, req, `Set 'datetime' filter to ${filter["datetime"]}`);
 	const attemptsCount = (await schema.tasks.aggregate([
 		{$match: {'_id': {$in: taskIds}}},
@@ -206,7 +281,7 @@ router.get("/personal/attempts", async (req, res) => {
 					'answer': '$attempts.user_answer',
 					'verdict': '$attempts.status'}},
 		{$match: filter},
-		{$sort: {'datetime': -1}}
+		{$sort: sorter}
 	]).skip((page - 1) * limit).limit(limit);
 	await logPretty(LOG_LEVEL.debug, req, `Page of ${limit} attempts: ${attempts}`);
 	res.json({attempts: attempts, totalElements: attemptsCount, status: 200});
@@ -720,7 +795,11 @@ router.get("/history", async (req, res) => {
 	const startDatetime = req.query.start_datetime;
 	const endDatetime = req.query.end_datetime;
 	const page = Number(req.query.page);
-	const limit = Number(req.query.limit);
+	const limit = req.query.limit ? Number(req.query.limit) : 10;
+	const roles = req.query.roles.split(",");
+	const loginSearch = req.query.login_search;
+	const actionSearch = req.query.action_search;
+	const contentSearch = req.query.content_search;
 	const filter = {};
 	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime))}
@@ -728,6 +807,20 @@ router.get("/history", async (req, res) => {
 		filter["timestamp"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
+	filter.role = {$in: roles};
+	if(loginSearch) filter.login = {
+		$regex: loginSearch.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&'),
+		$options: "i"
+	}
+	if(actionSearch) filter.action = {
+		$regex: actionSearch.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&'),
+		$options: "i"
+	}
+	if(contentSearch) filter.content = {
+		$regex: contentSearch.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&'),
+		$options: "i"
+	}
+
 	const historyCount = (await schema.users.aggregate([
 		{$match: {}},
 		{$unwind: {'path': '$history'}},
@@ -771,14 +864,12 @@ router.post("/add_action", async (req, res) => {
 
 // get logs by...
 router.get("/logs", async (req, res) => {
-	await logEnterEndpoint(req);
-	const sortByDateTime = req.query.sortByDateTime; // null | "asc" | "desc"
-	const logLevels = req.query.logLevels;
-	const messageText = req.query.message;
 	const startDatetime = req.query.start_datetime;
 	const endDatetime = req.query.end_datetime;
 	const page = Number(req.query.page);
-	const limit = Number(req.query.limit);
+	const limit = req.query.limit ? Number(req.query.limit) : 10;
+	const levels = req.query.levels.split(",");
+	const contentSearch = req.query.content_search;
 	var filter = {};
 	if ((startDatetime !== '') && (endDatetime === ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime))}
@@ -786,7 +877,12 @@ router.get("/logs", async (req, res) => {
 		filter["timestamp"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["timestamp"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
-	
+	filter.level = {$in: levels};
+	if(contentSearch) filter.content = {
+		$regex: contentSearch.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&'),
+		$options: "i"
+	}
+
 	const logsCount = (await schema.logs.aggregate([
 		{$match: {}},
 		{$project: {'_id': 0,

@@ -18,6 +18,7 @@
     "express-session": "^1.17.3",
     "faker": "^5.5.3",
     "mongoose": "^6.7.2",
+    "multer": "^1.4.5-lts.1",
     "node-eval": "^2.0.0"
   },
   "devDependencies": {

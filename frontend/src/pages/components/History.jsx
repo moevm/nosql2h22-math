@@ -25,7 +25,7 @@ export default function History(){
         start_datetime: '',
         end_datetime: '',
         datetime_sorter: "descend",
-        roles: ["pupil", "teacher"],
+        roles: ["pupil", "teacher", "administrator"],
         login_search: '',
         action_search: '',
         content_search: '',
@@ -48,7 +48,7 @@ export default function History(){
         filterNew.page = query.get('page') == null ? 1 : Number(query.get('page'));
         filterNew.start_datetime = query.get('start_datetime') == null ? '' : query.get('start_datetime');
         filterNew.end_datetime = query.get('end_datetime') == null ? '' : query.get('end_datetime');
-        filterNew.roles = query.get('roles') == null ? ["pupil", "teacher"] : query.get('roles').split(',');
+        filterNew.roles = query.get('roles') == null ? ["pupil", "teacher", "administrator"] : query.get('roles').split(',');
         filterNew.login_search = query.get('login_search') == null ? '' : query.get('login_search');
         filterNew.action_search = query.get('action_search') == null ? '' : query.get('action_search');
         filterNew.content_search = query.get('content_search') == null ? '' : query.get('content_search');
@@ -96,6 +96,9 @@ export default function History(){
                         <Row>
                             <Checkbox value="teacher">Учитель</Checkbox>
                         </Row>
+                        <Row>
+                            <Checkbox value={"administrator"}>Администратор</Checkbox>
+                        </Row>
                     </Col>
                 </Checkbox.Group>
                 <div style={{display: 'flex'}}>
@@ -106,7 +109,7 @@ export default function History(){
             </div>
         ),
         filterIcon: () => (
-            <FilterFilled style={{color: filter.roles.length < 2 ? '#1890ff' : undefined}}/>
+            <FilterFilled style={{color: filter.roles.length < 3 ? '#1890ff' : undefined}}/>
         )
     });
 
@@ -165,7 +168,7 @@ export default function History(){
             instance.get(`/history?${query.toString()}&limit=${filter.limit}&datetime_sorter=${filter.datetime_sorter}`)
                     .then(res => {
                         console.log(res.data)
-                        if (res.data.status == 200)
+                        if (res.data.status === 200 || res.data.status === 304)
                             responseToDataSource(res.data)
                     });
             
@@ -176,9 +179,7 @@ export default function History(){
             title: 'Дата',
             dataIndex: 'timestamp',
             key: 'date',
-            ...getColumnDateFilterProps(),
-            defaultSortOrder: 'descend',
-            sorter: () => {},
+            ...getColumnDateFilterProps()
         },
         {
             title: 'Логин',
@@ -210,13 +211,6 @@ export default function History(){
         var filterNew = {...filter};
         filterNew.page = pagination.current;
         filterNew.limit = pagination.pageSize;
-        switch (sorter.field){
-            case 'timestamp':
-                filterNew.datetime_sorter = (sorter.order == undefined) ? '' : sorter.order;
-                break;
-            default:
-                break;
-        };
         setFilter(filterNew);
     };
 
