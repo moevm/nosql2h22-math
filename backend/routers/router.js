@@ -14,9 +14,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const schema = require('../database/schema');
 
 const taskGenerator = require('../task_generator');
-const mongoose = require("mongoose");
-const pushLog = require('../push_log').pushLog;
-const LOG_LEVEL = require('../push_log').LOG_LEVEL;
+const {LOG_LEVEL, logSimple, logEnterEndpoint, logPretty} = require("../push_log");
 const lastPublishedHWData = require('../complex_queries').lastPublishedHWData;
 
 // export database
@@ -65,20 +63,18 @@ router.post("/", async (req, res) => {
 
 // submit attempt, return verdict (ok/not ok)
 router.post("/submit", async (req, res) => {
-	console.log("POST /submit");
-	await pushLog(LOG_LEVEL.debug, `POST /submit with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`body: ${JSON.stringify(req.body)}, query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req);
 	const userId = req.cookies.userId;
 	if(userId === undefined) {
-		console.log(`User is not logged in. Expecting task to be in request body`);
+		await logPretty(LOG_LEVEL.debug, req, `User is not logged in. Expecting task to be in request body`);
 		const answer = Number.parseInt(req.body.answer);
 		const task = req.body.task;
 		const correctAnswer = Number.parseInt(task.correctAnswer);
-		console.log(`Answer is ${answer}; correct answer is ${correctAnswer}`);
+		await logPretty(LOG_LEVEL.debug, req, `Answer is ${answer}; correct answer is ${correctAnswer}`);
 		res.json({verdict: answer === correctAnswer ? "correct" : "not correct"});
 		return;
 	}
-	console.log(`User is logged in`);
+	await logPretty(LOG_LEVEL.debug, req, `User is logged in`);
 	const user = schema.users.find({_id: ObjectId(userId)});
 	if(!user) {
 		res.json({status: 400, message: `User with id=${userId} not found`});
@@ -88,9 +84,9 @@ router.post("/submit", async (req, res) => {
 	const answer = Number.parseInt(req.body.answer);
 	const correctAnswer = (await schema.tasks.findOne({'_id': taskId},
 		{'_id': 0, 'correct_answer': 1})).correct_answer;
-	console.log(`Answer is ${answer}; correct answer is ${correctAnswer}`);
+	await logPretty(LOG_LEVEL.debug, req, `Answer is ${answer}; correct answer is ${correctAnswer}`);
 	const status = answer === correctAnswer ? 'correct' : 'not correct';
-	console.log(`Solution status is "${status}"`);
+	await logPretty(LOG_LEVEL.debug, req, `Solution status is "${status}"`);
 	await schema.tasks.updateOne({'_id': taskId},
 		{$set: {"attempts.$[attempt].end_timestamp": Date.now(),
 				"attempts.$[attempt].status": status,
@@ -136,29 +132,24 @@ router.get("/personal/homeworks", async (req, res) => {
 
 // get task by categories; if unsolved task exists, return it instead of creating a new task
 router.get("/task", async (req, res) => {
-	console.log("GET /task");
-	await pushLog(LOG_LEVEL.debug,
-		`'GET /task' with query: ${JSON.stringify(req.query)}, cookies: ${JSON.stringify(req.cookies)}`);
+	await logEnterEndpoint(req);
 	if(!req.query.categories) {
-		await pushLog(LOG_LEVEL.warning,
-			`GET /task: req.query.categories evaluated to false. This should never happen in a finished app ` +
+		await logPretty(LOG_LEVEL.warning, req,
+			`req.query.categories evaluated to false. This should never happen in a finished app ` +
 			`if request came from frontend`);
 		res.json({status: 400, message: "Request must contain 'categories' as query parameter"});
 		return;
 	}
 	const categories = req.query.categories.split(" ").sort();
-	await pushLog(LOG_LEVEL.finest, `GET /task: categories=${categories}`);
-	console.log(`Got cookies: ${JSON.stringify(req.cookies)}`);
+	await logPretty(LOG_LEVEL.debug, req, `categories=${categories}`);
 	const userId = req.cookies.userId;
 	const userRole = req.cookies.userRole;
-	console.log("User id:", userId, typeof userId);
-	await pushLog(LOG_LEVEL.finest, `GET /task for user id=${userId}`);
+	await logPretty(LOG_LEVEL.debug, req, `user id=${userId}`);
 	if(userId === undefined) {
-		console.log(`Sending a task without saving`);
-		await pushLog(LOG_LEVEL.debug, `GET /task: User not authenticated. ` +
+		await logPretty(LOG_LEVEL.debug, req, `User not authenticated. ` +
 			`Sending a task without saving`);
 		const task = taskGenerator(categories);
-		await pushLog(LOG_LEVEL.finest, `GET /task: Generated task: ${JSON.stringify(task)}`);
+		await logPretty(LOG_LEVEL.debug, req, `Generated task: ${JSON.stringify(task)}`);
 		task._id = null;
 		task.created_timestamp = null;
 		task.attempts = [];
@@ -166,40 +157,34 @@ router.get("/task", async (req, res) => {
 		return;
 	}
 	if(userRole !== "pupil") {
-		await pushLog(LOG_LEVEL.warning, `GET /task: User is logged in, but not a pupil. Refusing.`);
+		await logPretty(LOG_LEVEL.warning, req, `User is logged in, but not a pupil. Refusing.`);
 		res.json({status: 403, message: "Log in as a pupil to solve tasks or log out to preview them"});
 		return;
 	}
 	const taskIds = (await schema.users.findOne({'_id': userId}, {'tasks': 1})).tasks
-	console.log(`Found tasks by user: ${JSON.stringify(taskIds)}`);
-	await pushLog(LOG_LEVEL.finest, `GET /task: Found tasks by user: ${JSON.stringify(taskIds)}`);
+	await logPretty(LOG_LEVEL.debug, req, `Found tasks by user: ${JSON.stringify(taskIds)}`);
 	const result = await schema.tasks.findOne({'_id': {$in: taskIds},
 		'categories': categories,
 		'attempts.status': 'in progress'});
 	if(!result) {
-		console.log(`Creating a new task`);
-		await pushLog(LOG_LEVEL.finest, `GET /task: Unfinished task for given categories not found. Generating a new one`);
+		await logPretty(LOG_LEVEL.debug, req, `Unfinished task for given categories not found. Generating a new one`);
 		const task = taskGenerator(categories);
-		console.log(`Generated task: ${JSON.stringify(task)}`);
-		await pushLog(LOG_LEVEL.finest, `GET /task: Generated task: ${JSON.stringify(task)}`);
+		await logPretty(LOG_LEVEL.debug, req, `Generated task: ${JSON.stringify(task)}`);
 		const taskObject = new schema.tasks(task);
-		console.log(`Mongo task document: ${taskObject}`);
 		await taskObject.save();
 		const attemptObject = new schema.attempts({});
-		console.log(`Mongo attempt document: ${attemptObject}`);
-		await pushLog(LOG_LEVEL.finest, `GET /task: Mongo attempt document: ${JSON.stringify(attemptObject)}`);
+		await logPretty(LOG_LEVEL.debug, req, `Mongo attempt document: ${JSON.stringify(attemptObject)}`);
 		await schema.tasks.updateOne({'_id': taskObject._id},
 			{$set: {"attempts": [attemptObject]}});
 		await schema.users.updateOne({"_id": ObjectId(userId)}, {
 			$set: {"tasks": taskIds.concat([taskObject._id])}
 		});
 		const findUpdated = await schema.tasks.findOne({'_id': taskObject._id});
-		await pushLog(LOG_LEVEL.finest, `GET /task: Updated task: ${findUpdated}`);
+		await logPretty(LOG_LEVEL.debug, req, `Updated task: ${findUpdated}`);
 		res.json(findUpdated);
 		return;
 	}
-	console.log(`Found fitting pending task: ${result}`);
-	await pushLog(LOG_LEVEL.debug, `Found fitting pending task: ${result}`);
+	await logPretty(LOG_LEVEL.debug, req, `Found fitting pending task: ${result}`);
 	res.json(result);
 });
 
@@ -212,6 +197,7 @@ router.get("/personal/last-categories", async (req, res) => {
 
 // get attempts for a user filtered by...
 router.get("/personal/attempts", async (req, res) => {
+	await logEnterEndpoint(req);
 	const userId = req.query.userId;
 	const page = Number(req.query.page);
 	const limit = Number(req.query.limit);
@@ -270,7 +256,7 @@ router.get("/personal/attempts", async (req, res) => {
 	if(debug) console.log(sorter);
 	if(!sorter.solvingTime && !sorter.datetime) sorter.datetime = -1;
 	if(debug) console.log(sorter);
-
+	await logPretty(LOG_LEVEL.debug, req, `Set 'datetime' filter to ${filter["datetime"]}`);
 	const attemptsCount = (await schema.tasks.aggregate([
 		{$match: {'_id': {$in: taskIds}}},
 		{$unwind: {'path': '$attempts'}},
@@ -297,10 +283,12 @@ router.get("/personal/attempts", async (req, res) => {
 		{$match: filter},
 		{$sort: sorter}
 	]).skip((page - 1) * limit).limit(limit);
+	await logPretty(LOG_LEVEL.debug, req, `Page of ${limit} attempts: ${attempts}`);
 	res.json({attempts: attempts, totalElements: attemptsCount, status: 200});
 });
 
 router.get("/personal/graph-stats", async (req, res) => {
+	await logEnterEndpoint(req);
 	const userId = req.query.userId;
 	const startDatetime = req.query.start_datetime;
 	const endDatetime = req.query.end_datetime;
@@ -319,7 +307,7 @@ router.get("/personal/graph-stats", async (req, res) => {
 		filter["end_datetime"] = {$lte: (new Date(endDatetime + "T23:59:59.999Z"))}
 	if ((startDatetime !== '') && (endDatetime !== ''))
 		filter["end_datetime"] = {$gte: (new Date(startDatetime)), $lte: (new Date(endDatetime + "T23:59:59.999Z"))}
-	console.log(filter)
+	await logPretty(LOG_LEVEL.debug, req, `Set filter to ${JSON.stringify(filter)}`);
 	const attempts = await schema.tasks.aggregate([
 		{$match: {'_id': {$in: taskIds}}},
 		{$unwind: {'path': '$attempts'}},
@@ -332,6 +320,7 @@ router.get("/personal/graph-stats", async (req, res) => {
 		{$unwind: {'path': '$categories'}},
 		{$project: {"category": "$categories", "verdict": "$verdict"}}
 	]);
+	await logPretty(LOG_LEVEL.debug, req, `Got attempts: ${attempts}`);
 	const resObject = {
 		addition: [0, 0],
 		subtraction: [0, 0],
@@ -343,19 +332,17 @@ router.get("/personal/graph-stats", async (req, res) => {
 				    		 not_correct: [resObject.addition[1], resObject.subtraction[1], resObject.multiplication[1], resObject.division[1]]
 					},
 				    status: 200};
+	await logPretty(LOG_LEVEL.debug, req, `Mapped result data: ${result}`);
 	res.json(result);
 })
 
 // publish new homework
 router.post("/classes/homeworks", async (req, res) => {
+	await logEnterEndpoint(req);
 	const classIds = req.body.classIds.map(id => ObjectId(id));
 	const deadline = new Date(req.body.deadline);
 	const homeworkTasks = req.body.homeworkTasks;
 	const userRole = req.cookies.userRole;
-	console.debug(`classIds: ${classIds}\n`,
-		`deadline: ${deadline}\n`,
-		`homeworkTasks: ${homeworkTasks}\n`,
-		`userRole: ${userRole}`);
 	if(userRole !== "teacher") {
 		res.json({status: 401, message: "Log in as a teacher to proceed"});
 		return;
@@ -371,6 +358,7 @@ router.post("/classes/homeworks", async (req, res) => {
 });
 
 router.get("/homeworks", async (req, res) => {
+	await logEnterEndpoint(req);
 	const requestedId = req.query.userId;
 	const requestedClass = req.query.classId;
 	const type = req.query.type;
@@ -415,7 +403,6 @@ router.get("/homeworks", async (req, res) => {
 				{$match: {'datetime': {$gte: (new Date(homeworks[i].created_timestamp)), $lte: (new Date(homeworks[i].deadline_timestamp))}}},
 				{$project: {'categories': '$categories'}}
 			])).map(obj => obj.categories);
-			console.log(attempts);
 			for (let j = 0; j < homeworks[i].tasks.length; j++){
 				homeworks[i].tasks[j].progress = 0;
 				for (let k = 0; k < attempts.length; k++){
@@ -430,9 +417,7 @@ router.get("/homeworks", async (req, res) => {
 
 // add a class
 router.post("/classes", async (req, res) => {
-	await pushLog(LOG_LEVEL.debug, `POST /classes with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`body: ${JSON.stringify(req.body)}, ` +
-		`query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req);
 	const className = req.body.className;
 	const userId = req.cookies.userId;
 	const userRole = req.cookies.userRole;
@@ -441,7 +426,7 @@ router.post("/classes", async (req, res) => {
 		return;
 	}
 	const existingClass = await schema.classes.findOne({title: className});
-	await pushLog(LOG_LEVEL.debug, `Tried to find class with name ${className}, got ${existingClass}`);
+	await logPretty(LOG_LEVEL.debug, req, `Tried to find class with name ${className}, got ${existingClass}`);
 	if(existingClass) {
 		res.json({status: 409, message: `Class named "${className}" already exists`});
 		return;
@@ -453,30 +438,29 @@ router.post("/classes", async (req, res) => {
 	});
 	await newClass.save();
 	const createdClass = await schema.classes.findOne({title: className});
-	await pushLog(LOG_LEVEL.debug, `Created class: ${createdClass}`);
+	await logPretty(LOG_LEVEL.debug, req, `Created class: ${createdClass}`);
 	res.json({status: 201, classId: createdClass._id.toString(), message: "Created"});
 });
 
 // join to class as a pupil
 router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
-	await pushLog(LOG_LEVEL.debug, `POST ${req.url} with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req);
 	const classId = ObjectId(req.params.id);
 	const userId = ObjectId(req.cookies.userId);
 	const userRole = req.cookies.userRole;
 	if(userRole !== "pupil") {
-		await pushLog(LOG_LEVEL.warning, `${req.url}: User role is "${userRole}" instead of "pupil"`);
+		await logPretty(LOG_LEVEL.warning, req, `${req.url}: User role is "${userRole}" instead of "pupil"`);
 		res.json({status: 401, message: "Log in as a pupil to proceed"});
 		return;
 	}
 	const classToEnter = await schema.classes.findOne({_id: classId});
 	if(!classToEnter) {
-		await pushLog(LOG_LEVEL.warning, `${req.url}: No class to enter`);
+		await logPretty(LOG_LEVEL.warning, req, `${req.url}: No class to enter`);
 		res.json({status: 404, message: "Class not found (wrong link or class was deleted)"});
 		return;
 	}
 	if(classToEnter.members.indexOf(userId) !== -1) {
-		await pushLog(LOG_LEVEL.warning, `${req.url}: Pupil already in class`);
+		await logPretty(LOG_LEVEL.warning, req, `${req.url}: Pupil already in class`);
 		res.json({status: 409, message: "Pupil already present in class"});
 		return;
 	}
@@ -486,11 +470,11 @@ router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 			}
 	});
 	if(classWithPupil) {
-		await pushLog(LOG_LEVEL.warning, `User already is in class ${classWithPupil._id}. ` +
+		await logPretty(LOG_LEVEL.warning, req, `User already is in class ${classWithPupil._id}. ` +
 			`User will be silently removed from that class!`);
 		classWithPupil.members.splice(classWithPupil.members.indexOf(userId), 1);
 		await classWithPupil.save();
-		await pushLog(LOG_LEVEL.debug, `Other class with this pupil removed: ${classWithPupil}`);
+		await logPretty(LOG_LEVEL.debug, req, `Other class with this pupil removed: ${classWithPupil}`);
 	}
 	await schema.classes.updateOne({_id: classId}, {$push: {members: userId}});
 	res.json({status: 200, message: "Joined"});
@@ -498,49 +482,50 @@ router.post("/classes/:id([0-9a-f]+)/join", async (req, res) => {
 
 // delete pupil from class
 router.post("/classes/:id([0-9a-f]+)/delete-pupil", async (req, res) => {
-	await pushLog(LOG_LEVEL.debug, `POST ${req.url} with cookies: ${JSON.stringify(req.cookies)}, ` +
+	await logPretty(LOG_LEVEL.debug, req, `POST ${req.url} with cookies: ${JSON.stringify(req.cookies)}, ` +
 		`body: ${JSON.stringify(req.body)}, query: ${JSON.stringify(req.query)}`);
 	const classId = ObjectId(req.params.id);
 	const userId = ObjectId(req.cookies.userId);
 	const userRole = req.cookies.userRole;
 	const deletedUserId = ObjectId(req.body.userId);
 	if(userRole !== "teacher") {
-		await pushLog(LOG_LEVEL.warning, `${req.url}: User role is "${userRole}" instead of "pupil"`);
+		await logPretty(LOG_LEVEL.warning, req, `${req.url}: User role is "${userRole}" instead of "pupil"`);
 		res.json({status: 401, message: "Log in as a teacher to proceed"});
 		return;
 	}
 	const classToEdit = await schema.classes.findOne({_id: classId});
 	if(!classToEdit) {
-		await pushLog(LOG_LEVEL.warning, `${req.url}: No class to edit`);
+		await logPretty(LOG_LEVEL.warning, req, `${req.url}: No class to edit`);
 		res.json({status: 404, message: "Class not found (wrong link or class was deleted)"});
 		return;
 	}
 	if(classToEdit.members.indexOf(deletedUserId) === -1) {
-		await pushLog(LOG_LEVEL.warning, `User #${deletedUserId} is not in class`);
+		await logPretty(LOG_LEVEL.warning, req, `User #${deletedUserId} is not in class`);
 		res.json({status: 409, message: "User not found in class"});
 		return;
 	}
 	const deletedUser = await schema.users.findOne({_id: deletedUserId});
 	if(!deletedUser || deletedUser.role !== "pupil") {
-		await pushLog(LOG_LEVEL.warning, `User #${deletedUserId} is not a valid pupil`);
+		await logPretty(LOG_LEVEL.warning, req, `User #${deletedUserId} is not a valid pupil`);
 		res.json({status: 409, message: "Invalid pupil to delete"});
 		return;
 	}
 	const deletedUserIdPos = classToEdit.members.indexOf(deletedUserId);
 	if(deletedUserIdPos === -1) {
-		await pushLog(LOG_LEVEL.warning, `User that is requesting pupil deletion does not own the class`);
+		await logPretty(LOG_LEVEL.warning, req, `User that is requesting pupil deletion does not own the class`);
 		res.json({status: 403, message: "Requesting user does not own the class"});
 		return;
 	}
-	await pushLog(LOG_LEVEL.finest, `Before deletion: ${await schema.classes.findOne({_id: classId})}`);
+	await logPretty(LOG_LEVEL.finest, req, `Before deletion: ${await schema.classes.findOne({_id: classId})}`);
 	classToEdit.members.splice(deletedUserIdPos, 1);
 	await classToEdit.save();
-	await pushLog(LOG_LEVEL.finest, `After deletion: ${await schema.classes.findOne({_id: classId})}`);
+	await logPretty(LOG_LEVEL.finest, req, `After deletion: ${await schema.classes.findOne({_id: classId})}`);
 	res.json({status: 200, message: "Deleted"});
 });
 
 // get statistics for all students in a class (Class Page)
 router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
+	await logEnterEndpoint(req);
 	const classId = ObjectId(req.params.id);
 	const userId = ObjectId(req.cookies.userId);
 	const userRole = req.cookies.userRole;
@@ -551,13 +536,11 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 	const cls = await schema.classes.findOne({ $expr: {
 		$in: [userId, "$members"]
 	}, _id: classId});
-	console.debug(cls);
 	if(!cls) {
 		res.json({status: 404, message: "Could not access the class"});
 		return;
 	}
 	const pupils = await schema.users.find({_id: {$in: cls.members}, role: "pupil"});
-	console.debug(pupils);
 	const data = pupils.map( pupil => {
 		return {
 			_id: pupil._id,
@@ -575,12 +558,12 @@ router.get("/classes/:id([0-9a-f]+)/stats", async (req, res) => {
 			lastDistractionSolutionTime: "1970-01-01T00:05:40.000Z"
 		};
 	} );
-	console.debug(data);
 	res.json({status: 200, message: "Ok", data: data});
 });
 
 // get aggregated statistics for all classes by teacher (Add Class Process Page)
 router.get("/classes", async (req, res) => {
+	await logEnterEndpoint(req);
 	const userId = ObjectId(req.cookies.userId);
 	const userRole = req.cookies.userRole;
 	if(userRole !== "teacher") {
@@ -590,7 +573,6 @@ router.get("/classes", async (req, res) => {
 	const classesByTeacher = await schema.classes.find({ $expr: {
 			$in: [userId, "$members"]
 		}});
-	console.debug(classesByTeacher);
 	const result = []
 	for(const cls of classesByTeacher) {
 		const classInfo = {};
@@ -598,29 +580,23 @@ router.get("/classes", async (req, res) => {
 		classInfo.title = cls.title;
 		classInfo.pupilCount = cls.members.length - 1;
 		const hwInfo = await lastPublishedHWData(cls);
-		console.debug("hwInfo == ", hwInfo);
-		console.debug({
-			...classInfo,
-			...hwInfo
-		});
 		result.push({
 			...classInfo,
 			...hwInfo
 		});
 	}
-	console.debug(result);
 	res.json({status: 200, message: "Ok", result: result, totalElements: classesByTeacher.length});
 });
 
 router.get("/class/:id([0-9a-f]+)", async (req, res) => {
-	await pushLog(LOG_LEVEL.debug, `GET /class with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req)
 	const classId = req.params.id;
 	const class_ = await schema.classes.findOne({_id: ObjectId(classId)});
 	res.json(class_);
 })
 
 router.get("/classes-ids", async (req, res) => {
+	await logEnterEndpoint(req);
 	const userId = ObjectId(req.cookies.userId);
 	const userRole = req.cookies.userRole;
 	if(userRole !== "teacher") {
@@ -635,8 +611,7 @@ router.get("/classes-ids", async (req, res) => {
 
 // delete a class
 router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
-	await pushLog(LOG_LEVEL.debug, `${req.method} ${req.url} with ` +
-		`cookies: ${JSON.stringify(req.cookies)}, query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req);
 	const classId = ObjectId(req.params.id);
 	const userId = ObjectId(req.cookies.userId);
 	const userRole = req.cookies.userRole;
@@ -658,9 +633,7 @@ router.post("/classes/:id([0-9a-f]+)/delete", async (req, res) => {
 
 // register
 router.post("/register", async (req, res) => {
-	console.log("POST /register");
-	await pushLog(LOG_LEVEL.debug, `POST /register with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`body: ${JSON.stringify(req.body)}, query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req);
 	const creatableRoles = ["teacher", "pupil"];
 	const email = req.body.email;
 	const password = req.body.password;
@@ -677,8 +650,7 @@ router.post("/register", async (req, res) => {
 	}
 	const userWithSameEmail = await schema.users.findOne({email: email});
 	if(userWithSameEmail) {
-		console.log(`Found user with the same email: ${userWithSameEmail}`);
-		await pushLog(LOG_LEVEL.warning, `POST /register: `+
+		await logPretty(LOG_LEVEL.warning, req, `POST /register: `+
 			`Found user with the same email: ${userWithSameEmail}. Exiting`);
 		res.json({status: 409, message: `User with email '${email}' already exists`});
 		return;
@@ -691,24 +663,20 @@ router.post("/register", async (req, res) => {
 		role: role
 	});
 	await newUser.save();
-	console.log(`Created user: ${newUser}`);
-	await pushLog(LOG_LEVEL.debug, `Created user: ${newUser}`)
+	await logPretty(LOG_LEVEL.debug, req, `Created user: ${newUser}`);
 	res.json({status: 201, message: "created"});
 });
 
 // log in
 router.post("/login", async (req, res) => {
+	await logEnterEndpoint(req);
 	const email = req.body.email;
 	const password = req.body.password;
-	console.log(`Got POST to /login with email="${email}", password="${password}"`);
-	await pushLog(LOG_LEVEL.debug, `POST /login with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`body: ${JSON.stringify(req.body)}, query: ${JSON.stringify(req.query)}`);
 	if(!email || !password) {
 		res.json({status: 403, message: "Wrong credentials"});
 		return;
 	}
 	const user = await schema.users.findOne({'email': email});
-	console.log(`Found user: ${user}`);
 	if(!user) {
 		res.json({status: 403, message: "Wrong credentials"});
 		return;
@@ -726,8 +694,7 @@ router.post("/login", async (req, res) => {
 
 router.get("/remember-me", async (req, res) => {
 	const userId = req.query.id;
-	await pushLog(LOG_LEVEL.debug, `GET /remember-me with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req);
 	res.cookie("userId", userId, {
 		signed: false,
 		secure: true,
@@ -742,6 +709,7 @@ router.get("/remember-me", async (req, res) => {
 });
 
 router.get("/access-to-user", async (req, res) => {
+	await logEnterEndpoint(req);
 	const requestedId = req.query.requested;
 	const requesterRole = req.cookies.userRole;
 	if (!requestedId){
@@ -778,8 +746,7 @@ router.get("/access-to-user", async (req, res) => {
 });
 
 router.get("/whoami", async (req, res) => {
-	await pushLog(LOG_LEVEL.debug, `GET /whoami with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req);
 	const userId = req.cookies.userId;
 	if(userId === undefined) {
 		res.json(null);
@@ -790,11 +757,8 @@ router.get("/whoami", async (req, res) => {
 });
 
 router.get("/logout", async (req, res) => {
-	console.log("GET /logout");
-	await pushLog(LOG_LEVEL.debug, `GET /logout with cookies: ${JSON.stringify(req.cookies)}, ` +
-		`query: ${JSON.stringify(req.query)}`);
+	await logEnterEndpoint(req);
 	const userId = req.cookies.userId;
-	console.log(`Cookie userId: ${userId}`);
 	if(userId === undefined) {
 		res.json({status: 401, message: "Must log in first to logout"});
 		return;
@@ -827,6 +791,7 @@ router.get("/test/init", async (req, res) => {
 
 // get history by...
 router.get("/history", async (req, res) => {
+	await logEnterEndpoint(req);
 	const startDatetime = req.query.start_datetime;
 	const endDatetime = req.query.end_datetime;
 	const page = Number(req.query.page);
@@ -884,6 +849,7 @@ router.get("/history", async (req, res) => {
 });
 
 router.post("/add_action", async (req, res) => {
+	await logEnterEndpoint(req);
 	const userId = req.cookies.userId;
 	const action = req.body.action;
 	const content = req.body.content;
@@ -956,19 +922,23 @@ router.post("/clear-db", async (req,res) => {
 });
 
 // fallback
-router.get("(.*)", (req, res) => {
+router.get("(.*)", async (req, res) => {
+	await logEnterEndpoint(req);
 	res.json({status: 404, message: "No valid endpoint for that"});
 });
 
-router.post("(.*)", (req, res) => {
+router.post("(.*)", async (req, res) => {
+	await logEnterEndpoint(req);
 	res.json({status: 404, message: "No valid endpoint for that"});
 });
 
-router.put("(.*)", (req, res) => {
+router.put("(.*)", async (req, res) => {
+	await logEnterEndpoint(req);
 	res.json({status: 404, message: "No valid endpoint for that"});
 });
 
-router.delete("(.*)", (req, res) => {
+router.delete("(.*)", async (req, res) => {
+	await logEnterEndpoint(req);
 	res.json({status: 404, message: "No valid endpoint for that"});
 });
 
