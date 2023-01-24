@@ -100,7 +100,6 @@ export default function Class(){
             dataIndex: 'pupil',
             key: 'pupil',
             defaultSortOrder: 'descend',
-            sorter: () => {},
             render: (text, record) => <a href={`../stats/${record.pupil_id}`}>{text}</a>,
         },
         {
@@ -111,38 +110,32 @@ export default function Class(){
         {
             title: 'Последняя активность',
             dataIndex: 'last_activity',
-            key: 'last_activity',
-            sorter: () => {}
+            key: 'last_activity'
         },
         {
             title: 'Прогресс ДЗ',
             dataIndex: 'homework_progress',
-            key: 'homework_progress',
-            sorter: () => {}
+            key: 'homework_progress'
         },
         {
             title: 'Ошибок в задачах с сложением',
             dataIndex: 'addition_fails',
-            key: 'addition_fails',
-            sorter: () => {}
+            key: 'addition_fails'
         },
         {
             title: 'Ошибок в задачах с вычитанием',
             dataIndex: 'subtraction_fails',
-            key: 'subtraction_fails',
-            sorter: () => {}
+            key: 'subtraction_fails'
         },
         {
             title: 'Ошибок в задачах с умножением',
             dataIndex: 'multiplication_fails',
-            key: 'multiplication_fails',
-            sorter: () => {}
+            key: 'multiplication_fails'
         },
         {
             title: 'Ошибок в задачах с делением',
             dataIndex: 'division_fails',
-            key: 'division_fails',
-            sorter: () => {}
+            key: 'division_fails'
         },
         {
             title: 'Время возможного отвлекания',

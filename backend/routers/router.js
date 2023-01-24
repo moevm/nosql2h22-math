@@ -570,6 +570,80 @@ router.get("/classes", async (req, res) => {
 		res.json({status: 401, message: "Log in as a teacher to proceed"});
 		return;
 	}
+	const categories = req.query.categories.split(",").sort();
+	const mode = req.query.modes;
+	console.log(categories);
+	console.log(mode);
+	const page = Number(req.query.page);
+	const limit = Number(req.query.limit);
+	let filter;
+	if(mode !== "single") {
+		filter = (elem) => (elem.tasks !== null) && elem.tasks.some(
+			task => {
+				console.log(task.categories);
+				console.log(categories);
+				if(task.categories.length !== categories.length) {
+					console.log("Length fail")
+					return false;
+				}
+				const taskCategories = [...task.categories].sort();
+				for(let i = 0; i < categories.length; ++i) {
+					if(categories[i] !== taskCategories[i]) {
+						console.log("Elem fail")
+						return false;
+					}
+				}
+				console.log("Ok")
+				return true;
+			}
+		);
+	}
+	else {
+		filter = (elem) => (elem.tasks === null) || elem.tasks.some(
+			task => {
+				for(const category of categories) {
+					if(task.categories.indexOf(category) !== -1) return true;
+				}
+				return false;
+			}
+		);
+	}
+	const multiplier = (sortTypeString) => {
+		if(sortTypeString === "ascend") return 1;
+		if(sortTypeString === "descend") return -1;
+		return 0;
+	}
+	const sortFunction = (attributeName, orderString) => {
+		return (a, b) => {
+			if(a[attributeName] === null) return 1;
+			if(b[attributeName] === null) return -1;
+			return sorter[attributeName](a, b) * multiplier(orderString);
+		}
+	}
+	const sorterToAttribute = {
+		class_sorter: "title",
+		pupils_count_sorter: "pupilCount",
+		deadline_sorter: "deadline",
+		completed_homeworks_sorter: "doneCount",
+		submitted_answers_sorter: "answersCount",
+		correct_answers_sorter: "correctAnswersCount"
+	}
+	const sorter = {
+		title: (a, b) => {
+			if(a.title > b.title) return 1;
+			if(a.title < b.title) return -1;
+			return 0;
+		},
+		pupilCount: (a, b) => a.pupilCount - b.pupilCount,
+		deadline: (a, b) => {
+			if(a.deadline > b.deadline) return 1;
+			if(a.deadline < b.deadline) return -1;
+			return 0;
+		},
+		doneCount: (a, b) => a.doneCount - b.doneCount,
+		answersCount: (a, b) => a.answersCount - b.answersCount,
+		correctAnswersCount: (a, b) => a.correctAnswersCount - b.correctAnswersCount
+	}
 	const classesByTeacher = await schema.classes.find({ $expr: {
 			$in: [userId, "$members"]
 		}});
@@ -585,7 +659,22 @@ router.get("/classes", async (req, res) => {
 			...hwInfo
 		});
 	}
-	res.json({status: 200, message: "Ok", result: result, totalElements: classesByTeacher.length});
+	let pickedSorter;
+	for(const key in sorterToAttribute) {
+		console.log(`Key ${key}`);
+		if(req.query[key]) {
+			console.log(`Found req.query.${key}: ${req.query[key]}`);
+			const sortType = req.query[key];
+			const functionToUse = sorterToAttribute[key];
+			console.log(`sortType === "${sortType}"; functionToUse === "${functionToUse}"`);
+			pickedSorter = sortFunction(functionToUse, sortType);
+			break;
+		}
+	}
+	console.log(JSON.stringify(result));
+	console.log(JSON.stringify(result.filter(filter)));
+	console.log(JSON.stringify([...result.filter(filter)].sort(pickedSorter)))
+	res.json({status: 200, message: "Ok", result: result.filter(filter).sort(pickedSorter), totalElements: classesByTeacher.length});
 });
 
 router.get("/class/:id([0-9a-f]+)", async (req, res) => {
