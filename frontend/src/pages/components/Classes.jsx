@@ -34,7 +34,7 @@ export default function Classes(){
         class_sorter: "descend",
         pupils_count_sorter: "",
         categories: ["addition", "subtraction", "multiplication", "division"],
-        modes: ["single", "jointly", "as_part_of"],
+        modes: ["single"],
         deadline_sorter: "",
         completed_homeworks_sorter: "",
         submitted_answers_sorter: "",
@@ -57,7 +57,7 @@ export default function Classes(){
         var filterNew = {...filter};
         filterNew.page = query.get('page') == null ? 1 : Number(query.get('page'));
         filterNew.categories = query.get('categories') == null ? ["addition", "subtraction", "multiplication", "division"] : query.get('categories').split(',');
-        filterNew.modes = query.get('modes') == null ? ["single", "jointly", "as_part_of"] : query.get('modes').split(',');
+        filterNew.modes = query.get('modes') == null ? ["single"] : query.get('modes').split(',');
         setFilter(filterNew);
     }, []);
 
@@ -88,7 +88,7 @@ export default function Classes(){
         query.set('categories', filter.categories);
         query.set('modes', filter.modes);
         navigate('?' + query.toString());
-        instance.get(`/classes?${query.toString()}&limit=${filter.limit}&pupils_count_sorter=${filter.pupils_count_sorter}&deadline_sorter=${filter.deadline_sorter}`+
+        instance.get(`/classes?${query.toString()}&limit=${filter.limit}&class_sorter=${filter.class_sorter}&pupils_count_sorter=${filter.pupils_count_sorter}&deadline_sorter=${filter.deadline_sorter}`+
                      `&completed_homeworks_sorter=${filter.completed_homeworks_sorter}&submitted_answers_sorter=${filter.submitted_answers_sorter}&correct_answers_sorter=${filter.correct_answers_sorter}`)
                 .then(res => {
                     console.log(res.data)
@@ -108,7 +108,7 @@ export default function Classes(){
 
     const categoriesReset = () => {
         setFilter({...filter, categories: ["addition", "subtraction", "multiplication", "division"],
-                                                  modes: ["single", "jointly", "as_part_of"]})
+                                                  modes: ["single"]})
     }
     
     const getColumnCategoriesFilterProps = () => ({
@@ -133,13 +133,7 @@ export default function Classes(){
                 <Checkbox.Group style={{margin: '4px'}} value={filter.modes} onChange={handleCategories('modes')}>
                     <Col>
                         <Row>
-                            <Checkbox value="single">Одиночные</Checkbox>
-                        </Row>
-                        <Row>
-                            <Checkbox value="jointly">Совместно</Checkbox>
-                        </Row>
-                        <Row>
-                            <Checkbox value="as_part_of">В составе</Checkbox>
+                            <Checkbox value="single">Нестрогое совпадение</Checkbox>
                         </Row>
                     </Col>
                 </Checkbox.Group>
@@ -151,7 +145,7 @@ export default function Classes(){
             </div>
         ),
         filterIcon: () => (
-            <FilterFilled style={{color: (filter.categories.length + filter.modes.length) < 7 ? '#1890ff' : undefined}}/>
+            <FilterFilled style={{color: (filter.categories.length + filter.modes.length) < 5 ? '#1890ff' : undefined}}/>
         )
     });
 

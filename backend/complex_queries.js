@@ -25,6 +25,7 @@ async function lastPublishedHWData(classDocument) {
     const data = {};
     data.deadline = homework.deadline_timestamp;
     data.tasks = homework.tasks;
+    data.tasks.sort();
     data.doneCount = 0;
     data.answersCount = 0;
     data.correctAnswersCount = 0;
