@@ -1,25 +1,43 @@
 # nosql2h22-math
 
-Тестовые пользователи:
+## Тестовые пользователи:
 
-Ученик - john.doe@example.com password
+Ученик:
 
-Учитель - jane.doe@example.com password
+Логин - john.doe@example.com
 
-Администратор - admin@nosql7.com admin
+Пароль - password
 
-Для запуска сервиса необходимо совершить следующие действия:
+---
 
-Сервер:
+Учитель:
 
-1. Перейти в директорию /backend/
-2. Выполнить команду `npm install`
-3. Выполнить `node ./server.js`
+Логин - jane.doe@example.com 
 
-Клиент:
+Пароль - password
 
-1. Перейти в директорию /frontend/
-2. Выполнить команду `npm install`
-3. Выполнить команду `npm run dev`
+---
 
-Запись работы прототипа "Хранение и представление" (добавление новых элементов в БД): https://drive.google.com/file/d/1OyQgPUWnMwl-aMsy5-s2EtGu-LuPXHqm/view?usp=sharing
+Администратор:
+
+Логин - admin@nosql7.com
+
+Пароль - admin
+
+## Инструкция по запуску:
+
+1. Убедитесь, что порты 5173 и 8000 на машине, где будет разворачиваться система, свободны. Сделать это можно, например, с помощью утилиты `netstat`:
+```bash
+sudo netstat -tunlp | grep 5173
+sudo netstat -tunlp | grep 8000
+```
+2. Склонируйте репозиторий и перейдите в его корень:
+```bash
+git clone https://github.com/moevm/nosql2h22-math.git
+cd nosql2h22-math/
+```
+3. Запустите приложение:
+```bash
+docker-compose build --no-cache
+docker-compose up
+```
