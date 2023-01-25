@@ -41,3 +41,6 @@ cd nosql2h22-math/
 docker-compose build --no-cache
 docker-compose up
 ```
+
+## Демонстрация
+Ссылка на демо второго прототипа: [https://drive.google.com/file/d/1I_5AWoBbg32v3b5GxPaxBJEO9L71xIBl/view?usp=share_link](https://drive.google.com/file/d/1I_5AWoBbg32v3b5GxPaxBJEO9L71xIBl/view?usp=share_link)
