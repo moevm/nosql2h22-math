@@ -82,7 +82,7 @@ export default function History(){
     };
 
     const rolesReset = () => {
-        setFilter({...filter, roles: ["pupil", "teacher"]});
+        setFilter({...filter, roles: ["pupil", "teacher", "administrator"]});
     };
     
     const getColumnRolesFilterProps = () => ({

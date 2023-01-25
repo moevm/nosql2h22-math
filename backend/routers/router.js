@@ -33,17 +33,23 @@ router.get('/', async (req,res) => {
 // import database (replace existing)
 router.post("/", async (req, res) => {
 	upload(req, res, async (err) => {
-		if(err) console.error(err);
+		if (err) console.error(err);
 		else console.log(JSON.stringify(typeof req.file));
 		let text;
 		try {
 			text = req.file.buffer.toString();
-		}
-		catch (e) {
+		} catch (e) {
 			res.status(415).json({message: "File must be json"});
 			return;
 		}
-		const content = JSON.parse(text);
+		let content;
+		try {
+			content = JSON.parse(text);
+		}
+		catch (e) {
+			res.status(400).send("Похоже, JSON-файл содержит синтаксические ошибки. Восстановление отменено.")
+			return;
+		}
 		const expectedCollections = ["histories", "users", "tasks", "classes",
 			"homeworks", "logs", "attempts"];
 		const fileHasAll = Object.keys(content).every((key) => {
